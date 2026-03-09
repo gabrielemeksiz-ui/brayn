@@ -7,12 +7,23 @@ export async function POST(req: NextRequest) {
 
   if (!secret || !botToken) {
     console.error("Telegram env vars missing");
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server misconfigured" },
+      { status: 500 }
+    );
   }
 
   // 1) Vérifier que la requête vient bien de Telegram (secret)
   const headerSecret = req.headers.get("x-telegram-bot-api-secret-token");
+  console.log("Telegram secret header =", headerSecret);
+
   if (headerSecret !== secret) {
+    console.error(
+      "Unauthorized Telegram request. Expected:",
+      secret,
+      "Got:",
+      headerSecret
+    );
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
