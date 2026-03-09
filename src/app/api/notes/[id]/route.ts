@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// On tape 'any' sur context pour éviter le bug de typings Next 16
+type RouteContext = {
+  params: { id: string };
+};
+
+export async function GET(_req: NextRequest, context: RouteContext) {
   const supabase = getSupabaseServerClient();
+  const id = context.params.id;
 
   const { data, error } = await supabase
     .from("notes")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error) {
@@ -24,17 +27,15 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const body = await req.json();
+export async function PATCH(req: NextRequest, context: RouteContext) {
   const supabase = getSupabaseServerClient();
+  const id = context.params.id;
+  const body = await req.json();
 
   const { data, error } = await supabase
     .from("notes")
     .update(body)
-    .eq("id", params.id)
+    .eq("id", id)
     .select("*")
     .single();
 
@@ -49,16 +50,11 @@ export async function PATCH(
   return NextResponse.json(data);
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: NextRequest, context: RouteContext) {
   const supabase = getSupabaseServerClient();
+  const id = context.params.id;
 
-  const { error } = await supabase
-    .from("notes")
-    .delete()
-    .eq("id", params.id);
+  const { error } = await supabase.from("notes").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting note", error);
