@@ -17,6 +17,8 @@ export default function BraynPage() {
   const [newCount, setNewCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory>>(new Set());
+  const [showNewNoteForm, setShowNewNoteForm] = useState(false);
+  const [newNoteText, setNewNoteText] = useState('');
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,26 @@ export default function BraynPage() {
     return notes.filter(note => note.categories.includes(cat));
   };
 
+  const createNewNote = async () => {
+    if (!newNoteText.trim()) return;
+
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newNoteText }),
+      });
+
+      if (res.ok) {
+        setNewNoteText('');
+        setShowNewNoteForm(false);
+        fetchNotes();
+      }
+    } catch (err) {
+      console.error('Failed to create note:', err);
+    }
+  };
+
   const sidebarItem = (label: string, value: Section, badge?: number) => (
     <button
       key={value}
@@ -91,8 +113,40 @@ export default function BraynPage() {
     <div className="h-screen bg-[#0e0e0e] text-white flex overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-56 bg-[#141414] border-r border-white/5 flex flex-col p-3 gap-1 shrink-0">
-        <div className="px-2 py-3 mb-1">
-          <h1 className="text-lg font-bold tracking-tight text-white">🧠 Brayn</h1>
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center justify-between px-2 py-3">
+            <h1 className="text-lg font-bold tracking-tight text-white">🧠 Brayn</h1>
+            <button
+              onClick={() => setShowNewNoteForm(!showNewNoteForm)}
+              className="text-zinc-400 hover:text-white text-lg leading-none transition-all"
+            >
+              +
+            </button>
+          </div>
+          {showNewNoteForm && (
+            <div className="space-y-2 px-2">
+              <textarea
+                value={newNoteText}
+                onChange={e => setNewNoteText(e.target.value)}
+                placeholder="Ajouter une note…"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 resize-none h-20"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={createNewNote}
+                  className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs py-1.5 rounded-lg transition-all font-medium"
+                >
+                  Créer
+                </button>
+                <button
+                  onClick={() => setShowNewNoteForm(false)}
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-zinc-400 text-xs py-1.5 rounded-lg transition-all"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest">Vues</div>
