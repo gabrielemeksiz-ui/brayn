@@ -102,13 +102,25 @@ export default function BraynPage() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Barre de recherche */}
         <div className="p-4 border-b border-white/5 space-y-3">
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher dans mon cerveau…"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder-zinc-500 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
-          />
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher dans mon cerveau…"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder-zinc-500 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
+            />
+            <select
+              value={filterPeriod}
+              onChange={e => setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')}
+              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all hover:border-white/20 cursor-pointer"
+            >
+              <option value="all">Tout</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="7d">7 jours</option>
+              <option value="30d">30 jours</option>
+            </select>
+          </div>
           <div className="flex gap-2 flex-wrap">
             {ALL_CATEGORIES.map(cat => (
               <button
@@ -120,18 +132,6 @@ export default function BraynPage() {
                 {CATEGORY_LABELS[cat]}
               </button>
             ))}
-            <div className="ml-auto flex gap-1">
-              {(['today', '7d', '30d', 'all'] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setFilterPeriod(p)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-all
-                    ${filterPeriod === p ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'text-zinc-500 border-white/10 hover:border-white/20'}`}
-                >
-                  {p === 'today' ? 'Aujourd\'hui' : p === 'all' ? 'Tout' : p}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
