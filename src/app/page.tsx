@@ -16,9 +16,12 @@ export default function BraynPage() {
   const [filterPeriod, setFilterPeriod] = useState<'today' | '7d' | '30d' | 'all'>('all');
   const [newCount, setNewCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory>>(new Set());
-  const [showNewNoteForm, setShowNewNoteForm] = useState(false);
-  const [newNoteText, setNewNoteText] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory | string>>(new Set());
+  const [expandNewSection, setExpandNewSection] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -61,7 +64,7 @@ export default function BraynPage() {
     }
   };
 
-  const toggleCategoryExpand = (cat: NoteCategory) => {
+  const toggleCategoryExpand = (cat: NoteCategory | string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(cat)) {
       newExpanded.delete(cat);
@@ -71,28 +74,47 @@ export default function BraynPage() {
     setExpandedCategories(newExpanded);
   };
 
-  const getCategoryNotes = (cat: NoteCategory) => {
-    return notes.filter(note => note.categories.includes(cat));
+  const getCategoryNotes = (cat: NoteCategory | string) => {
+    return notes.filter(note =>
+      (note.categories as (NoteCategory | string)[]).includes(cat)
+    );
   };
 
-  const createNewNote = async () => {
-    if (!newNoteText.trim()) return;
+  const getNewNotes = () => {
+    return notes.filter(note => !note.seen);
+  };
 
+  const createEmptyNote = async () => {
     try {
       const res = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newNoteText }),
+        body: JSON.stringify({ text: '' }),
       });
 
       if (res.ok) {
-        setNewNoteText('');
-        setShowNewNoteForm(false);
+        setShowActionMenu(false);
         fetchNotes();
       }
     } catch (err) {
       console.error('Failed to create note:', err);
     }
+  };
+
+  const createNewCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    const newCat = newCategoryName.toLowerCase().replace(/\s+/g, '_');
+    if (customCategories.includes(newCat)) return;
+
+    setCustomCategories([...customCategories, newCat]);
+    setNewCategoryName('');
+    setShowNewCategoryForm(false);
+    setShowActionMenu(false);
+  };
+
+  const getAllCategories = (): (NoteCategory | string)[] => {
+    return [...ALL_CATEGORIES, ...customCategories];
   };
 
   const sidebarItem = (label: string, value: Section, badge?: number) => (
@@ -113,33 +135,58 @@ export default function BraynPage() {
     <div className="h-screen bg-[#0e0e0e] text-white flex overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-56 bg-[#141414] border-r border-white/5 flex flex-col p-3 gap-1 shrink-0">
-        <div className="space-y-2 mb-3">
+        <div className="space-y-2 mb-3 relative">
           <div className="flex items-center justify-between px-2 py-3">
             <h1 className="text-lg font-bold tracking-tight text-white">🧠 Brayn</h1>
             <button
-              onClick={() => setShowNewNoteForm(!showNewNoteForm)}
+              onClick={() => setShowActionMenu(!showActionMenu)}
               className="text-zinc-400 hover:text-white text-lg leading-none transition-all"
             >
               +
             </button>
           </div>
-          {showNewNoteForm && (
+          {showActionMenu && (
+            <div className="absolute top-14 right-2 bg-[#0e0e0e] border border-white/10 rounded-lg shadow-lg overflow-hidden z-50">
+              <button
+                onClick={() => {
+                  createEmptyNote();
+                  setShowActionMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-all whitespace-nowrap"
+              >
+                Créer une note
+              </button>
+              <button
+                onClick={() => setShowNewCategoryForm(true)}
+                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-all whitespace-nowrap border-t border-white/5"
+              >
+                Créer une catégorie
+              </button>
+            </div>
+          )}
+          {showNewCategoryForm && (
             <div className="space-y-2 px-2">
-              <textarea
-                value={newNoteText}
-                onChange={e => setNewNoteText(e.target.value)}
-                placeholder="Ajouter une note…"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 resize-none h-20"
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && createNewCategory()}
+                placeholder="Nom de la catégorie…"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                autoFocus
               />
               <div className="flex gap-2">
                 <button
-                  onClick={createNewNote}
+                  onClick={createNewCategory}
                   className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs py-1.5 rounded-lg transition-all font-medium"
                 >
                   Créer
                 </button>
                 <button
-                  onClick={() => setShowNewNoteForm(false)}
+                  onClick={() => {
+                    setShowNewCategoryForm(false);
+                    setNewCategoryName('');
+                  }}
                   className="flex-1 bg-white/5 hover:bg-white/10 text-zinc-400 text-xs py-1.5 rounded-lg transition-all"
                 >
                   Annuler
@@ -150,14 +197,53 @@ export default function BraynPage() {
         </div>
 
         <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest">Vues</div>
-        {sidebarItem('Nouveaux', 'new', newCount)}
+
+        {/* Expandable "Nouveaux" section */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setExpandNewSection(!expandNewSection)}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between
+              ${section === 'new' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+          >
+            <span className="flex items-center gap-2 flex-1">
+              <span className="text-xs">{expandNewSection ? '▼' : '▶'}</span>
+              Nouveaux
+            </span>
+            {newCount > 0 && (
+              <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">{newCount}</span>
+            )}
+          </button>
+          {expandNewSection && (
+            <div className="pl-6 space-y-1 max-h-48 overflow-y-auto">
+              {getNewNotes().length === 0 ? (
+                <p className="text-xs text-zinc-600 py-2">Aucune note</p>
+              ) : (
+                getNewNotes().map(note => (
+                  <button
+                    key={note.id}
+                    onClick={() => {
+                      setSection('new');
+                      openNote(note);
+                    }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
+                      ${selected?.id === note.id ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                  >
+                    {note.clean_original_language ?? note.original_text}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
         {sidebarItem('Tous', 'all')}
         {sidebarItem('Récents', 'recent')}
 
         <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">Catégories</div>
-        {ALL_CATEGORIES.map(cat => {
+        {getAllCategories().map(cat => {
           const isExpanded = expandedCategories.has(cat);
           const categoryNotes = getCategoryNotes(cat);
+          const label = CATEGORY_LABELS[cat as NoteCategory] || cat;
           return (
             <div key={cat} className="space-y-1">
               <button
@@ -166,7 +252,7 @@ export default function BraynPage() {
               >
                 <span className="flex items-center gap-2 flex-1">
                   <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
-                  {CATEGORY_LABELS[cat]}
+                  {label}
                 </span>
                 <span className="text-xs text-zinc-600">{categoryNotes.length}</span>
               </button>
