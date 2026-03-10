@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
+import { NoteEditor } from '@/components/NoteEditor';
 
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
@@ -44,7 +45,9 @@ export default function BraynPage() {
     setLoading(false);
   }, [section, search, filterCat, filterPeriod]);
 
-  useEffect(() => { fetchNotes(); }, [fetchNotes]);
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   useEffect(() => {
     fetch('/api/notes?seen=false')
@@ -361,7 +364,9 @@ export default function BraynPage() {
               <button
                 onClick={() => setSelected(null)}
                 className="text-zinc-600 hover:text-white text-lg leading-none"
-              >×</button>
+              >
+                ×
+              </button>
             </div>
             <p className="text-xs text-zinc-500">{formatDate(selected.created_at)}</p>
 
@@ -376,7 +381,10 @@ export default function BraynPage() {
             {selected.tags.length > 0 && (
               <div className="flex gap-1.5 flex-wrap">
                 {selected.tags.map(tag => (
-                  <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+                  <span
+                    key={tag}
+                    className="text-xs px-2 py-0.5 rounded-full bg_white/5 text-zinc-400 border border-white/10"
+                  >
                     #{tag}
                   </span>
                 ))}
@@ -387,8 +395,13 @@ export default function BraynPage() {
               <div className="space-y-1">
                 <p className="text-xs text-zinc-600 uppercase tracking-wider">Liens</p>
                 {selected.links.map(link => (
-                  <a key={link} href={link} target="_blank" rel="noopener noreferrer"
-                    className="block text-xs text-indigo-400 hover:text-indigo-300 truncate">
+                  <a
+                    key={link}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-xs text-indigo-400 hover:text-indigo-300 truncate"
+                  >
                     {link}
                   </a>
                 ))}
@@ -396,30 +409,31 @@ export default function BraynPage() {
             )}
           </div>
 
+          {/* Éditeur texte simple avec autosave (full_text) */}
           <div className="space-y-1">
-            <p className="text-xs text-zinc-600 uppercase tracking-wider">Texte original</p>
-            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-white/3 rounded-lg p-3 border border-white/5">
-              {selected.original_text}
-            </p>
+            <p className="text-xs text-zinc-600 uppercase tracking-wider">Texte</p>
+            <div className="bg-white/3 rounded-lg p-3 border border-white/5">
+              <NoteEditor
+                noteId={selected.id}
+                initialFullText={
+                  selected.full_text ??
+                  [
+                    `ID: ${selected.id}`,
+                    `DATE: ${formatDate(selected.created_at)}`,
+                    '',
+                    'RAW TEXT',
+                    selected.original_text,
+                    '',
+                    'VERSION PROPRE',
+                    selected.clean_original_language ?? '',
+                    '',
+                    'TRADUCTION',
+                    selected.clean_other_language ?? '',
+                  ].join('\n')
+                }
+              />
+            </div>
           </div>
-
-          {selected.clean_original_language && (
-            <div className="space-y-1">
-              <p className="text-xs text-zinc-600 uppercase tracking-wider">Version propre</p>
-              <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap bg-white/3 rounded-lg p-3 border border-white/5">
-                {selected.clean_original_language}
-              </p>
-            </div>
-          )}
-
-          {selected.clean_other_language && (
-            <div className="space-y-1">
-              <p className="text-xs text-zinc-600 uppercase tracking-wider">Traduction</p>
-              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-white/3 rounded-lg p-3 border border-white/5">
-                {selected.clean_other_language}
-              </p>
-            </div>
-          )}
         </aside>
       )}
     </div>

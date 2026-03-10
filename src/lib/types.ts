@@ -36,18 +36,21 @@ export const CATEGORY_COLORS: Record<NoteCategory, string> = {
 export type NoteSource = 'telegram' | 'desktop';
 
 export interface Note {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  source: NoteSource;
-  seen: boolean;
-  categories: NoteCategory[];
-  tags: string[];
-  links: string[];
-  original_text: string;
-  clean_original_language: string | null;
-  clean_other_language: string | null;
-}
+    id: string;
+    created_at: string;
+    updated_at: string;
+    source: NoteSource;
+    seen: boolean;
+    categories: NoteCategory[];
+    tags: string[];
+    links: string[];
+    original_text: string;
+    clean_original_language: string | null;
+    clean_other_language: string | null;
+    content_json?: any; // <-- pour BlockNote
+    full_text?: string | null;
+  }
+  
 
 export interface AIClassificationResponse {
   categories: NoteCategory[];
