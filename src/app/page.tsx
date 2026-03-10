@@ -5,8 +5,6 @@ import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 
-const PROJECTS = ['Brayn', 'yt2apple', 'learningtube'];
-
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
 export default function BraynPage() {
@@ -139,13 +137,6 @@ export default function BraynPage() {
             </div>
           );
         })}
-
-        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">Projets</div>
-        {PROJECTS.map(p => (
-          <button key={p} className="w-full text-left px-3 py-1.5 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-all">
-            {p}
-          </button>
-        ))}
       </aside>
 
       {/* Zone centrale */}
