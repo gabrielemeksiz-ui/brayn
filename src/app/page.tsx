@@ -18,6 +18,7 @@ export default function BraynPage() {
   const [filterPeriod, setFilterPeriod] = useState<'today' | '7d' | '30d' | 'all'>('all');
   const [newCount, setNewCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory>>(new Set());
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -60,6 +61,20 @@ export default function BraynPage() {
     }
   };
 
+  const toggleCategoryExpand = (cat: NoteCategory) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(cat)) {
+      newExpanded.delete(cat);
+    } else {
+      newExpanded.add(cat);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const getCategoryNotes = (cat: NoteCategory) => {
+    return notes.filter(note => note.categories.includes(cat));
+  };
+
   const sidebarItem = (label: string, value: Section, badge?: number) => (
     <button
       key={value}
@@ -88,7 +103,42 @@ export default function BraynPage() {
         {sidebarItem('Récents', 'recent')}
 
         <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">Catégories</div>
-        {ALL_CATEGORIES.map(cat => sidebarItem(CATEGORY_LABELS[cat], cat))}
+        {ALL_CATEGORIES.map(cat => {
+          const isExpanded = expandedCategories.has(cat);
+          const categoryNotes = getCategoryNotes(cat);
+          return (
+            <div key={cat} className="space-y-1">
+              <button
+                onClick={() => toggleCategoryExpand(cat)}
+                className="w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between text-zinc-400 hover:text-white hover:bg-white/5"
+              >
+                <span className="flex items-center gap-2 flex-1">
+                  <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
+                  {CATEGORY_LABELS[cat]}
+                </span>
+                <span className="text-xs text-zinc-600">{categoryNotes.length}</span>
+              </button>
+              {isExpanded && (
+                <div className="pl-6 space-y-1 max-h-48 overflow-y-auto">
+                  {categoryNotes.length === 0 ? (
+                    <p className="text-xs text-zinc-600 py-2">Aucune note</p>
+                  ) : (
+                    categoryNotes.map(note => (
+                      <button
+                        key={note.id}
+                        onClick={() => openNote(note)}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
+                          ${selected?.id === note.id ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                      >
+                        {note.clean_original_language ?? note.original_text}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">Projets</div>
         {PROJECTS.map(p => (
