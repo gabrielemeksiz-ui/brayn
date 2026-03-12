@@ -15,7 +15,6 @@ export default function BraynPage() {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<NoteCategory | null>(null);
   const [filterPeriod, setFilterPeriod] = useState<'today' | '7d' | '30d' | 'all'>('all');
-  const [newCount, setNewCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory | string>>(new Set());
   const [expandNewSection, setExpandNewSection] = useState(false);
@@ -29,15 +28,18 @@ export default function BraynPage() {
     const params = new URLSearchParams();
 
     if (section === 'new') params.set('seen', 'false');
-    if (section === 'recent') params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
+    if (section === 'recent')
+      params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
     if (section !== 'new' && section !== 'all' && section !== 'recent') {
       params.set('category', section);
     }
     if (search) params.set('q', search);
     if (filterCat) params.set('category', filterCat);
     if (filterPeriod === 'today') params.set('from', new Date().toISOString().split('T')[0]);
-    if (filterPeriod === '7d') params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
-    if (filterPeriod === '30d') params.set('from', new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]);
+    if (filterPeriod === '7d')
+      params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
+    if (filterPeriod === '30d')
+      params.set('from', new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]);
 
     const res = await fetch(`/api/notes?${params}`);
     const data = await res.json();
@@ -49,21 +51,36 @@ export default function BraynPage() {
     fetchNotes();
   }, [fetchNotes]);
 
-  useEffect(() => {
-    fetch('/api/notes?seen=false')
-      .then(r => r.json())
-      .then((d: Note[]) => setNewCount(d.length));
-  }, [notes]);
+  const getNewNotes = () => {
+    return notes.filter(note => !note.seen);
+  };
 
   const openNote = async (note: Note) => {
-    setSelected(note);
+    console.log('openNote id =', note.id, 'seen =', note.seen);
+
+    setSelected({ ...note, seen: true });
+
     if (!note.seen) {
-      await fetch(`/api/notes/${note.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seen: true }),
-      });
-      setNotes(prev => prev.map(n => n.id === note.id ? { ...n, seen: true } : n));
+      try {
+        const res = await fetch(`/api/notes/${note.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seen: true }),
+        });
+
+        if (!res.ok) {
+          console.error('PATCH /api/notes/[id] failed', await res.text());
+          return;
+        }
+
+        const updated: Note = await res.json();
+
+        setNotes(prev =>
+          prev.map(n => (n.id === updated.id ? { ...n, ...updated } : n)),
+        );
+      } catch (e) {
+        console.error('Failed to update note seen status', e);
+      }
     }
   };
 
@@ -79,20 +96,16 @@ export default function BraynPage() {
 
   const getCategoryNotes = (cat: NoteCategory | string) => {
     return notes.filter(note =>
-      (note.categories as (NoteCategory | string)[]).includes(cat)
+      (note.categories as (NoteCategory | string)[]).includes(cat),
     );
-  };
-
-  const getNewNotes = () => {
-    return notes.filter(note => !note.seen);
   };
 
   const createEmptyNote = async () => {
     try {
-      const res = await fetch('/api/notes', {
+      const res = await fetch('/api/notes/ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: '' }),
+        body: JSON.stringify({ text: ' ', source: 'desktop' }),
       });
 
       if (res.ok) {
@@ -129,10 +142,14 @@ export default function BraynPage() {
     >
       <span>{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">{badge}</span>
+        <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">
+          {badge}
+        </span>
       )}
     </button>
   );
+
+  const newCount = getNewNotes().length;
 
   return (
     <div className="h-screen bg-[#0e0e0e] text-white flex overflow-hidden font-sans">
@@ -161,7 +178,7 @@ export default function BraynPage() {
               </button>
               <button
                 onClick={() => setShowNewCategoryForm(true)}
-                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-all whitespace-nowrap border-t border-white/5"
+                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg_WHITE/5 transition-all whitespace-nowrap border-t border-white/5"
               >
                 Créer une catégorie
               </button>
@@ -199,21 +216,25 @@ export default function BraynPage() {
           )}
         </div>
 
-        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest">Vues</div>
+        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest">
+          Vues
+        </div>
 
         {/* Expandable "Nouveaux" section */}
         <div className="space-y-1">
           <button
             onClick={() => setExpandNewSection(!expandNewSection)}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between
-              ${section === 'new' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+              ${section === 'new' ? 'bg-white/10 text_WHITE' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
           >
             <span className="flex items-center gap-2 flex-1">
               <span className="text-xs">{expandNewSection ? '▼' : '▶'}</span>
               Nouveaux
             </span>
             {newCount > 0 && (
-              <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">{newCount}</span>
+              <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">
+                {newCount}
+              </span>
             )}
           </button>
           {expandNewSection && (
@@ -228,8 +249,12 @@ export default function BraynPage() {
                       setSection('new');
                       openNote(note);
                     }}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
-                      ${selected?.id === note.id ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                    className={`w_full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
+                      ${
+                        selected?.id === note.id
+                          ? 'bg-indigo-500/20 text-indigo-300'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
                   >
                     {note.clean_original_language ?? note.original_text}
                   </button>
@@ -242,7 +267,9 @@ export default function BraynPage() {
         {sidebarItem('Tous', 'all')}
         {sidebarItem('Récents', 'recent')}
 
-        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">Catégories</div>
+        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">
+          Catégories
+        </div>
         {getAllCategories().map(cat => {
           const isExpanded = expandedCategories.has(cat);
           const categoryNotes = getCategoryNotes(cat);
@@ -269,7 +296,11 @@ export default function BraynPage() {
                         key={note.id}
                         onClick={() => openNote(note)}
                         className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
-                          ${selected?.id === note.id ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                          ${
+                            selected?.id === note.id
+                              ? 'bg-indigo-500/20 text-indigo-300'
+                              : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                          }`}
                       >
                         {note.clean_original_language ?? note.original_text}
                       </button>
@@ -296,11 +327,13 @@ export default function BraynPage() {
             />
             <select
               value={filterPeriod}
-              onChange={e => setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all hover:border-white/20 cursor-pointer"
+              onChange={e =>
+                setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')
+              }
+              className="bg-white/5 border border_WHITE/10 rounded-xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all hover:border-white/20 cursor-pointer"
             >
               <option value="all">Tout</option>
-              <option value="today">Aujourd'hui</option>
+              <option value="today">Aujourd&apos;hui</option>
               <option value="7d">7 jours</option>
               <option value="30d">30 jours</option>
             </select>
@@ -311,7 +344,11 @@ export default function BraynPage() {
                 key={cat}
                 onClick={() => setFilterCat(filterCat === cat ? null : cat)}
                 className={`px-2.5 py-1 rounded-full text-xs border transition-all
-                  ${filterCat === cat ? CATEGORY_COLORS[cat] : 'bg-transparent text-zinc-500 border-white/10 hover:border-white/20'}`}
+                  ${
+                    filterCat === cat
+                      ? CATEGORY_COLORS[cat]
+                      : 'bg-transparent text-zinc-500 border-white/10 hover:border-white/20'
+                  }`}
               >
                 {CATEGORY_LABELS[cat]}
               </button>
@@ -330,19 +367,30 @@ export default function BraynPage() {
               key={note.id}
               onClick={() => openNote(note)}
               className={`w-full text-left p-3.5 rounded-xl border transition-all hover:border-white/20
-                ${selected?.id === note.id ? 'border-indigo-500/40 bg-indigo-500/5' : 'border-white/5 bg-white/2 hover:bg-white/4'}
+                ${
+                  selected?.id === note.id
+                    ? 'border-indigo-500/40 bg-indigo-500/5'
+                    : 'border-white/5 bg-white/2 hover:bg-white/4'
+                }
                 ${!note.seen ? 'border-l-2 border-l-indigo-400' : ''}`}
             >
               <div className="flex items-start gap-2 mb-1.5">
-                {!note.seen && <span className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 shrink-0" />}
+                {!note.seen && (
+                  <span className="w-2 h-2 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                )}
                 <p className="text-sm text-zinc-200 line-clamp-2 leading-relaxed flex-1">
                   {note.clean_original_language ?? note.original_text}
                 </p>
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className="text-xs text-zinc-600">{formatDate(note.created_at)}</span>
+                <span className="text-xs text-zinc-600">
+                  {formatDate(note.created_at)}
+                </span>
                 {note.categories.map(cat => (
-                  <span key={cat} className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}>
+                  <span
+                    key={cat}
+                    className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}
+                  >
                     {CATEGORY_LABELS[cat]}
                   </span>
                 ))}
@@ -360,7 +408,9 @@ export default function BraynPage() {
         <aside className="w-96 bg-[#141414] border-l border-white/5 overflow-y-auto p-5 space-y-5 shrink-0">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-600 font-mono">{selected.id.slice(0, 8)}…</span>
+              <span className="text-xs text-zinc-600 font-mono">
+                {selected.id.slice(0, 8)}…
+              </span>
               <button
                 onClick={() => setSelected(null)}
                 className="text-zinc-600 hover:text-white text-lg leading-none"
@@ -372,7 +422,10 @@ export default function BraynPage() {
 
             <div className="flex gap-1.5 flex-wrap">
               {selected.categories.map(cat => (
-                <span key={cat} className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}>
+                <span
+                  key={cat}
+                  className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}
+                >
                   {CATEGORY_LABELS[cat]}
                 </span>
               ))}
@@ -409,7 +462,6 @@ export default function BraynPage() {
             )}
           </div>
 
-          {/* Éditeur texte simple avec autosave (full_text) */}
           <div className="space-y-1">
             <p className="text-xs text-zinc-600 uppercase tracking-wider">Texte</p>
             <div className="bg-white/3 rounded-lg p-3 border border-white/5">

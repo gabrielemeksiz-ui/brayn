@@ -31,9 +31,12 @@ export async function GET(req: NextRequest) {
       query = query.contains("categories", [categoryParam]);
     }
 
-    // Filtre texte (simple LIKE sur original_text)
+    // Filtre texte — cherche dans le brut ET la version propre
     if (qParam) {
-      query = query.ilike("original_text", `%${qParam}%`);
+      const escaped = qParam.replace(/[%_]/g, "\\$&");
+      query = query.or(
+        `original_text.ilike.%${escaped}%,clean_original_language.ilike.%${escaped}%`,
+      );
     }
 
     // Plage de dates sur created_at
