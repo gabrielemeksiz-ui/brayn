@@ -440,7 +440,6 @@ export default function BraynPage() {
                     className="flex-1 text-left px-3 py-1.5 text-sm flex items-center gap-2 text-zinc-300 group-hover:text-white transition-colors duration-150"
                   >
                     <span className={`text-[9px] transition-transform duration-150 text-zinc-500 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 opacity-70 ${CATEGORY_DOT[cat as NoteCategory] ?? 'bg-zinc-500'}`} />
                     {label}
                   </button>
                   <span className="text-[11px] text-zinc-400 pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
