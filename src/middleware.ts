@@ -4,6 +4,11 @@ import type { NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/api/auth"];
 
 export function middleware(request: NextRequest) {
+  // Skip auth in development
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
 
   // Allow public paths
