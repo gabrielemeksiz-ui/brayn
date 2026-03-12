@@ -49,6 +49,34 @@ export const CATEGORY_COLORS: Record<NoteCategory, string> = {
   outils: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
 };
 
+// Outline only — bordure colorée sans fond
+export const CATEGORY_OUTLINE: Record<NoteCategory, string> = {
+  business_project: 'border-blue-500/50 text-blue-300',
+  personal_reflection: 'border-purple-500/50 text-purple-300',
+  interesting_topic: 'border-emerald-500/50 text-emerald-300',
+  conspiracy_theory: 'border-red-500/50 text-red-300',
+  stocks_watchlist: 'border-cyan-500/50 text-cyan-300',
+  need: 'border-pink-500/50 text-pink-300',
+  finance: 'border-green-500/50 text-green-300',
+  géopolitique: 'border-orange-500/50 text-orange-300',
+  'Crypto-Web3': 'border-violet-500/50 text-violet-300',
+  outils: 'border-sky-500/50 text-sky-300',
+};
+
+// Dot color for sidebar indicator
+export const CATEGORY_DOT: Record<NoteCategory, string> = {
+  business_project: 'bg-blue-400',
+  personal_reflection: 'bg-purple-400',
+  interesting_topic: 'bg-emerald-400',
+  conspiracy_theory: 'bg-red-400',
+  stocks_watchlist: 'bg-cyan-400',
+  need: 'bg-pink-400',
+  finance: 'bg-green-400',
+  géopolitique: 'bg-orange-400',
+  'Crypto-Web3': 'bg-violet-400',
+  outils: 'bg-sky-400',
+};
+
 export type NoteSource = 'telegram' | 'desktop';
 
 export interface Note {
