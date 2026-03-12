@@ -192,12 +192,15 @@ export default function BraynPage() {
     <button
       key={value}
       onClick={() => setSection(value)}
-      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between
-        ${section === value ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
+        ${section === value
+          ? 'bg-white/10 text-white font-medium'
+          : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
+        }`}
     >
       <span>{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">
+        <span className="bg-indigo-500/80 text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
           {badge}
         </span>
       )}
@@ -209,13 +212,13 @@ export default function BraynPage() {
   return (
     <div className="h-screen bg-[#282828] text-white flex overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-56 bg-[#141414] border-r border-white/5 flex flex-col p-3 gap-1 shrink-0">
+      <aside className="w-56 bg-[#1e1e1e] border-r border-white/[0.06] flex flex-col p-3 gap-0.5 shrink-0">
         <div className="space-y-2 mb-3 relative">
           <div className="flex items-center justify-between px-2 py-3">
-            <h1 className="text-lg font-bold tracking-tight text-white">🧠 Brayn</h1>
+            <h1 className="text-[15px] font-semibold tracking-tight text-white/90">🧠 Brayn</h1>
             <button
               onClick={() => setShowActionMenu(!showActionMenu)}
-              className="text-zinc-400 hover:text-white text-lg leading-none transition-all"
+              className="text-zinc-500 hover:text-zinc-200 text-xl leading-none transition-colors duration-150 w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/8"
             >
               +
             </button>
@@ -278,7 +281,7 @@ export default function BraynPage() {
           )}
         </div>
 
-        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest">
+        <div className="text-[10px] text-zinc-600 px-2 pt-2 pb-1 font-semibold tracking-wider uppercase">
           Vues
         </div>
 
@@ -286,15 +289,15 @@ export default function BraynPage() {
         <div className="space-y-1">
           <button
             onClick={() => setExpandNewSection(!expandNewSection)}
-            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between
-              ${section === 'new' ? 'bg-white/10 text_WHITE' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+            className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
+              ${section === 'new' ? 'bg-white/10 text-white font-medium' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'}`}
           >
             <span className="flex items-center gap-2 flex-1">
-              <span className="text-xs">{expandNewSection ? '▼' : '▶'}</span>
+              <span className={`text-[9px] transition-transform duration-150 ${expandNewSection ? 'rotate-90' : ''}`}>▶</span>
               Nouveaux
             </span>
             {newCount > 0 && (
-              <span className="bg-indigo-500 text-white text-xs px-1.5 py-0.5 rounded-full font-mono">
+              <span className="bg-indigo-500/80 text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
                 {newCount}
               </span>
             )}
@@ -329,7 +332,7 @@ export default function BraynPage() {
         {sidebarItem('Tous', 'all')}
         {sidebarItem('Récents', 'recent')}
 
-        <div className="text-xs text-zinc-600 px-2 py-1 uppercase tracking-widest mt-3">
+        <div className="text-[10px] text-zinc-600 px-2 pt-4 pb-1 font-semibold tracking-wider uppercase">
           Catégories
         </div>
         {getAllCategories().map(cat => {
@@ -434,12 +437,12 @@ export default function BraynPage() {
                 >
                   <button
                     onClick={() => toggleCategoryExpand(cat)}
-                    className="flex-1 text-left px-3 py-2 text-sm flex items-center gap-2 text-zinc-400 group-hover:text-white"
+                    className="flex-1 text-left px-3 py-1.5 text-sm flex items-center gap-2 text-zinc-500 group-hover:text-zinc-200 transition-colors duration-150"
                   >
-                    <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
+                    <span className={`text-[9px] transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                     {label}
                   </button>
-                  <span className="text-xs text-zinc-600 pr-2 group-hover:hidden">{categoryNotes.length}</span>
+                  <span className="text-[11px] text-zinc-600 pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
                   <div className="hidden group-hover:flex items-center gap-0.5 pr-1.5">
                     <button
                       onClick={() => {
@@ -474,13 +477,13 @@ export default function BraynPage() {
                         onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat); }}
                         onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
                         onClick={() => openNote(note)}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate cursor-grab active:cursor-grabbing
+                        className={`w-full text-left px-2.5 py-1 rounded-md text-xs transition-colors duration-150 truncate cursor-grab active:cursor-grabbing
                           ${
                             draggedNote?.id === note.id
-                              ? 'opacity-40'
+                              ? 'opacity-30'
                               : selected?.id === note.id
-                              ? 'bg-indigo-500/20 text-indigo-300'
-                              : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                              ? 'bg-indigo-500/15 text-indigo-300'
+                              : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
                           }`}
                       >
                         {note.clean_original_language ?? note.original_text}
@@ -497,21 +500,24 @@ export default function BraynPage() {
       {/* Zone principale */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Barre de recherche */}
-        <div className="p-4 border-b border-white/5 space-y-3 shrink-0">
+        <div className="px-5 pt-4 pb-3 border-b border-white/[0.06] space-y-2.5 shrink-0">
           <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher dans mon cerveau…"
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm placeholder-zinc-500 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
-            />
+            <div className="flex-1 relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher dans mon cerveau…"
+                className="w-full bg-white/5 border border-white/[0.08] rounded-lg pl-8 pr-4 py-2 text-sm placeholder-zinc-600 text-white focus:outline-none focus:border-white/20 focus:bg-white/6 transition-colors duration-150"
+              />
+            </div>
             <select
               value={filterPeriod}
-              onChange={e =>
-                setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')
-              }
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all hover:border-white/20 cursor-pointer"
+              onChange={e => setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')}
+              className="bg-white/5 border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-zinc-400 focus:outline-none focus:border-white/20 transition-colors duration-150 hover:border-white/15 cursor-pointer"
             >
               <option value="all">Tout</option>
               <option value="today">Aujourd&apos;hui</option>
@@ -519,16 +525,15 @@ export default function BraynPage() {
               <option value="30d">30 jours</option>
             </select>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {ALL_CATEGORIES.map(cat => (
               <button
                 key={cat}
                 onClick={() => setFilterCat(filterCat === cat ? null : cat)}
-                className={`px-2.5 py-1 rounded-full text-xs border transition-all
-                  ${
-                    filterCat === cat
-                      ? CATEGORY_COLORS[cat]
-                      : 'bg-transparent text-zinc-500 border-white/10 hover:border-white/20'
+                className={`px-2.5 py-0.5 rounded-full text-[11px] border whitespace-nowrap transition-colors duration-150
+                  ${filterCat === cat
+                    ? CATEGORY_COLORS[cat]
+                    : 'bg-transparent text-zinc-600 border-white/[0.08] hover:text-zinc-300 hover:border-white/20'
                   }`}
               >
                 {CATEGORY_LABELS[cat]}
@@ -541,11 +546,11 @@ export default function BraynPage() {
         {selected ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Top bar — minimal */}
-            <div className="flex items-center justify-between px-6 py-2.5 border-b border-white/5 shrink-0">
-              <span className="text-xs text-zinc-700 font-mono">{selected.id.slice(0, 8)}…</span>
+            <div className="flex items-center justify-between px-6 py-2 border-b border-white/[0.06] shrink-0">
+              <span className="text-[11px] text-zinc-700 font-mono">{selected.id.slice(0, 8)}…</span>
               <button
                 onClick={() => setSelected(null)}
-                className="text-zinc-600 hover:text-white text-lg leading-none transition-colors"
+                className="text-zinc-600 hover:text-zinc-300 text-xl leading-none transition-colors duration-150 w-6 h-6 flex items-center justify-center rounded hover:bg-white/5"
               >
                 ×
               </button>
@@ -626,8 +631,9 @@ export default function BraynPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-zinc-700 text-sm">Sélectionne une note dans la sidebar</p>
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 select-none">
+            <span className="text-4xl opacity-20">🧠</span>
+            <p className="text-zinc-600 text-sm">Sélectionne une note dans la sidebar</p>
           </div>
         )}
       </main>
