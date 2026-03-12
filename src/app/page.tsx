@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Note, NoteCategory } from '@/lib/types';
-import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/types';
+import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { NoteEditor } from '@/components/NoteEditor';
 
@@ -195,7 +195,7 @@ export default function BraynPage() {
       className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
         ${section === value
           ? 'bg-white/10 text-white font-medium'
-          : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
+          : 'text-zinc-300 hover:text-white hover:bg-white/5'
         }`}
     >
       <span>{label}</span>
@@ -290,7 +290,7 @@ export default function BraynPage() {
           <button
             onClick={() => setExpandNewSection(!expandNewSection)}
             className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
-              ${section === 'new' ? 'bg-white/10 text-white font-medium' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'}`}
+              ${section === 'new' ? 'bg-white/10 text-white font-medium' : 'text-zinc-300 hover:text-white hover:bg-white/5'}`}
           >
             <span className="flex items-center gap-2 flex-1">
               <span className={`text-[9px] transition-transform duration-150 ${expandNewSection ? 'rotate-90' : ''}`}>▶</span>
@@ -437,12 +437,13 @@ export default function BraynPage() {
                 >
                   <button
                     onClick={() => toggleCategoryExpand(cat)}
-                    className="flex-1 text-left px-3 py-1.5 text-sm flex items-center gap-2 text-zinc-500 group-hover:text-zinc-200 transition-colors duration-150"
+                    className="flex-1 text-left px-3 py-1.5 text-sm flex items-center gap-2 text-zinc-300 group-hover:text-white transition-colors duration-150"
                   >
-                    <span className={`text-[9px] transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                    <span className={`text-[9px] transition-transform duration-150 text-zinc-500 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 opacity-70 ${CATEGORY_DOT[cat as NoteCategory] ?? 'bg-zinc-500'}`} />
                     {label}
                   </button>
-                  <span className="text-[11px] text-zinc-600 pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
+                  <span className="text-[11px] text-zinc-400 pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
                   <div className="hidden group-hover:flex items-center gap-0.5 pr-1.5">
                     <button
                       onClick={() => {
@@ -483,7 +484,7 @@ export default function BraynPage() {
                               ? 'opacity-30'
                               : selected?.id === note.id
                               ? 'bg-indigo-500/15 text-indigo-300'
-                              : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
+                              : 'text-zinc-300 hover:text-white hover:bg-white/5'
                           }`}
                       >
                         {note.clean_original_language ?? note.original_text}
@@ -533,7 +534,7 @@ export default function BraynPage() {
                 className={`px-2.5 py-0.5 rounded-full text-[11px] border whitespace-nowrap transition-colors duration-150
                   ${filterCat === cat
                     ? CATEGORY_COLORS[cat]
-                    : 'bg-transparent text-zinc-600 border-white/[0.08] hover:text-zinc-300 hover:border-white/20'
+                    : `bg-transparent ${CATEGORY_OUTLINE[cat]} opacity-60 hover:opacity-100`
                   }`}
               >
                 {CATEGORY_LABELS[cat]}
