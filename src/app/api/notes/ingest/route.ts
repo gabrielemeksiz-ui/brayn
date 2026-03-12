@@ -25,9 +25,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 2. Lancer classification + réécriture en parallèle
+    // 2. Charger les catégories custom depuis la DB pour le prompt IA
+    const { data: dbCategories } = await supabase
+      .from("categories")
+      .select("id, label, description")
+      .eq("is_builtin", false)
+      .eq("hidden", false);
+
+    const customCategories = dbCategories ?? [];
+
+    // 3. Lancer classification + réécriture en parallèle
     const [classifyResult, rewriteResult] = await Promise.allSettled([
-      classifyNote(text),
+      classifyNote(text, customCategories),
       rewriteNote(text),
     ]);
 
@@ -38,7 +47,7 @@ export async function POST(req: NextRequest) {
       console.error("rewriteNote failed:", rewriteResult.reason);
     }
 
-    // 3. Construire la mise à jour avec les résultats disponibles
+    // 4. Construire la mise à jour avec les résultats disponibles
     const updates: Record<string, unknown> = {};
 
     if (classifyResult.status === "fulfilled") {
