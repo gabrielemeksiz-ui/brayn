@@ -207,7 +207,7 @@ export default function BraynPage() {
   const newCount = getNewNotes().length;
 
   return (
-    <div className="h-screen bg-[#0e0e0e] text-white flex overflow-hidden font-sans">
+    <div className="h-screen bg-[#282828] text-white flex overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-56 bg-[#141414] border-r border-white/5 flex flex-col p-3 gap-1 shrink-0">
         <div className="space-y-2 mb-3 relative">
@@ -221,7 +221,7 @@ export default function BraynPage() {
             </button>
           </div>
           {showActionMenu && (
-            <div className="absolute top-14 right-2 bg-[#0e0e0e] border border-white/10 rounded-lg shadow-lg overflow-hidden z-50">
+            <div className="absolute top-14 right-2 bg-[#282828] border border-white/10 rounded-lg shadow-lg overflow-hidden z-50">
               <button
                 onClick={() => {
                   createEmptyNote();
