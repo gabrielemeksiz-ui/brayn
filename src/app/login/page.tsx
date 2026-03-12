@@ -30,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="h-screen bg-[#0e0e0e] flex items-center justify-center">
+    <div className="h-screen bg-[#282828] flex items-center justify-center">
       <div className="w-full max-w-sm px-8">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-white mb-1">Brayn</h1>
