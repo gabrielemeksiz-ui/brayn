@@ -70,8 +70,8 @@ export function NoteEditor({ noteId, initialFullText }: NoteEditorProps) {
   }, [text, initialFullText, saveContent]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-xs text-neutral-500">
+    <div className="h-full flex flex-col gap-2">
+      <div className="flex items-center justify-between text-xs text-neutral-500 shrink-0">
         <span>
           {isSaving
             ? "Enregistrement…"
@@ -84,8 +84,8 @@ export function NoteEditor({ noteId, initialFullText }: NoteEditorProps) {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="w-full h-80 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-100 resize-none focus:outline-none focus:border-indigo-500/60"
-        placeholder="Tape ton texte ici…"
+        className="flex-1 w-full bg-transparent border-none px-0 py-0 text-[15px] text-zinc-300 resize-none focus:outline-none leading-8 placeholder-zinc-700"
+        placeholder="Commence à écrire…"
       />
     </div>
   );
