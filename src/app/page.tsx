@@ -330,7 +330,6 @@ export default function BraynPage() {
         </div>
 
         {sidebarItem('Tous', 'all')}
-        {sidebarItem('Récents', 'recent')}
 
         <div className="text-[10px] text-zinc-600 px-2 pt-4 pb-1 font-semibold tracking-wider uppercase">
           Catégories
@@ -629,6 +628,39 @@ export default function BraynPage() {
                   />
                 </div>
             </div>
+          </div>
+        ) : section === 'all' ? (
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {loading ? (
+              <p className="text-zinc-600 text-sm">Chargement…</p>
+            ) : notes.length === 0 ? (
+              <p className="text-zinc-600 text-sm">Aucune note</p>
+            ) : (
+              <div className="space-y-1.5">
+                {notes.map(note => (
+                  <button
+                    key={note.id}
+                    onClick={() => openNote(note)}
+                    className="w-full text-left px-4 py-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] hover:border-white/10 transition-colors duration-150 group"
+                  >
+                    <p className="text-sm text-zinc-200 truncate group-hover:text-white transition-colors duration-150">
+                      {note.clean_original_language ?? note.original_text}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="text-[11px] text-zinc-600">{formatDate(note.created_at)}</span>
+                      {note.categories.slice(0, 2).map(cat => (
+                        <span key={cat} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}>
+                          {CATEGORY_LABELS[cat]}
+                        </span>
+                      ))}
+                      {!note.seen && (
+                        <span className="text-[10px] text-indigo-400 font-medium">Nouveau</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 select-none">
