@@ -56,7 +56,6 @@ export async function POST(req: NextRequest) {
     if (rewriteResult.status === "fulfilled") {
       updates.clean_original_language =
         rewriteResult.value.clean_original_language;
-      updates.clean_other_language = rewriteResult.value.clean_other_language;
     }
 
     if (Object.keys(updates).length === 0) {
