@@ -12,6 +12,15 @@ export function NoteEditor({ noteId, initialFullText }: NoteEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }, [text]);
 
   // Quand on change de note, on remet le texte initial
   useEffect(() => {
@@ -70,7 +79,7 @@ export function NoteEditor({ noteId, initialFullText }: NoteEditorProps) {
   }, [text, initialFullText, saveContent]);
 
   return (
-    <div className="h-full flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-xs text-neutral-500 shrink-0">
         <span>
           {isSaving
@@ -82,9 +91,10 @@ export function NoteEditor({ noteId, initialFullText }: NoteEditorProps) {
       </div>
 
       <textarea
+        ref={textareaRef}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="flex-1 w-full bg-transparent border-none px-0 py-0 text-[15px] text-zinc-300 resize-none focus:outline-none leading-8 placeholder-zinc-700"
+        className="w-full bg-transparent border-none px-0 py-0 text-[15px] text-zinc-300 resize-none focus:outline-none leading-8 placeholder-zinc-700 overflow-hidden min-h-[200px]"
         placeholder="Commence à écrire…"
       />
     </div>
