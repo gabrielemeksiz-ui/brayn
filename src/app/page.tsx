@@ -112,6 +112,15 @@ export default function BraynPage() {
     fetchAllNotes();
   }, [fetchAllNotes]);
 
+  // Polling toutes les 15s pour détecter les nouvelles notes (ex: depuis Telegram)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchNotes();
+      fetchAllNotes();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [fetchNotes, fetchAllNotes]);
+
   useEffect(() => {
     fetch('/api/categories')
       .then(r => r.json())
