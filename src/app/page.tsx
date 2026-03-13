@@ -534,8 +534,8 @@ export default function BraynPage() {
         {/* Contenu — note ouverte ou liste ou état vide */}
         {selected ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-8 py-2 border-b border-[#2A2A2A] shrink-0">
+            {/* Top bar — sticky */}
+            <div className="flex items-center justify-between px-8 py-2 border-b border-[#2A2A2A] shrink-0 sticky top-0 bg-[#191919] z-10">
               <span className="text-[11px] text-[#606060] font-mono">{selected.id.slice(0, 8)}…</span>
               <button
                 onClick={() => setSelected(null)}
@@ -545,12 +545,12 @@ export default function BraynPage() {
               </button>
             </div>
 
-            {/* Page content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="w-full max-w-[900px] mx-auto px-8 pt-10 flex flex-col flex-1 min-h-0">
+            {/* Page content — scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="w-full max-w-[900px] mx-auto px-8 pt-10 pb-24">
 
                 {/* Title */}
-                <div className="shrink-0 mb-4">
+                <div className="mb-4">
                   <h1 className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug">
                     {selected.clean_original_language ?? selected.original_text}
                   </h1>
@@ -591,28 +591,26 @@ export default function BraynPage() {
                   </div>
                 </div>
 
-                <div className="border-b border-[#2A2A2A] mb-4 shrink-0" />
+                <div className="border-b border-[#2A2A2A] mb-4" />
 
                 {/* Editor */}
-                <div className="flex-1 min-h-0 pb-8 flex flex-col">
-                  <NoteEditor
-                    noteId={selected.id}
-                    initialFullText={
-                      selected.full_text ??
-                      [
-                        selected.original_text,
-                        '',
-                        '---',
-                        '',
-                        'VERSION PROPRE',
-                        selected.clean_original_language ?? '',
-                        '',
-                        'TRADUCTION',
-                        selected.clean_other_language ?? '',
-                      ].join('\n')
-                    }
-                  />
-                </div>
+                <NoteEditor
+                  noteId={selected.id}
+                  initialFullText={
+                    selected.full_text ??
+                    [
+                      selected.original_text,
+                      '',
+                      '---',
+                      '',
+                      'VERSION PROPRE',
+                      selected.clean_original_language ?? '',
+                      '',
+                      'TRADUCTION',
+                      selected.clean_other_language ?? '',
+                    ].join('\n')
+                  }
+                />
               </div>
             </div>
           </div>
