@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/api/auth", "/api/bot"];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/api/bot", "/api/notes/ingest"];
 
 export function middleware(request: NextRequest) {
   // Skip auth in development
