@@ -55,3 +55,24 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    if (!id) return NextResponse.json({ error: "Missing note id" }, { status: 400 });
+
+    // Supprimer l'historique chat lié
+    await supabase.from("note_chats").delete().eq("note_id", id);
+
+    const { error } = await supabase.from("notes").delete().eq("id", id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error("Error in DELETE /api/notes/[id]", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
