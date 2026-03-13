@@ -93,16 +93,14 @@ export async function rewriteNote(originalText: string): Promise<AIRewriteRespon
     messages: [
       {
         role: 'user',
-        content: `Tu es un assistant d'écriture. Pour ce texte :
-1. Détecte la langue principale (FR ou EN).
-2. Écris une version propre, concise et corrigée dans cette même langue (clean_original_language).
-3. Traduis fidèlement dans l'autre langue (clean_other_language).
-Ne rajoute aucune idée. Corrige l'orthographe, grammaire, ponctuation.
+        content: `Tu es un assistant de reformulation pour Brayn, une app de second cerveau. L'utilisateur t'envoie une note brute (souvent une idée rapide, un mémo vocal retranscrit, ou une pensée incomplète).
+
+Ta mission : réécris cette note en français, sous forme d'une ou deux phrases complètes, claires et bien formulées. Développe légèrement l'idée si elle est trop elliptique, mais reste fidèle à l'intention originale. Pas de bullet points. Pas d'intro. Juste la phrase(s) directement.
 
 Réponds UNIQUEMENT avec du JSON valide :
-{"clean_original_language": "...", "clean_other_language": "..."}
+{"clean_original_language": "..."}
 
-Texte :
+Note brute :
 ${originalText}`,
       },
     ],
