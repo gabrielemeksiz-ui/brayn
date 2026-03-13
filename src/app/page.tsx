@@ -192,15 +192,15 @@ export default function BraynPage() {
     <button
       key={value}
       onClick={() => setSection(value)}
-      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
+      className={`w-full text-left px-2 py-[5px] rounded-[4px] text-[14px] transition-colors duration-100 flex items-center justify-between
         ${section === value
-          ? 'bg-white/10 text-white font-medium'
-          : 'text-zinc-300 hover:text-white hover:bg-white/5'
+          ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
+          : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
         }`}
     >
       <span>{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="bg-indigo-500/80 text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
+        <span className="bg-[#2E7CD1] text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
           {badge}
         </span>
       )}
@@ -210,69 +210,66 @@ export default function BraynPage() {
   const newCount = getNewNotes().length;
 
   return (
-    <div className="h-screen bg-[#282828] text-white flex overflow-hidden font-sans">
+    <div className="h-screen bg-[#191919] text-[#D4D4D4] flex overflow-hidden" style={{fontFamily: "var(--font-inter, 'Inter', system-ui, sans-serif)"}}>
       {/* Sidebar */}
-      <aside className="w-56 bg-[#1e1e1e] border-r border-white/[0.06] flex flex-col p-3 gap-0.5 shrink-0">
-        <div className="space-y-2 mb-3 relative">
-          <div className="flex items-center justify-between px-2 py-3">
-            <h1 className="text-[15px] font-semibold tracking-tight text-white/90">🧠 Brayn</h1>
+      <aside className="w-64 bg-[#202020] border-r border-[#2A2A2A] flex flex-col shrink-0 overflow-y-auto">
+
+        {/* Header */}
+        <div className="relative px-3 pt-4 pb-2">
+          <div className="flex items-center justify-between px-1 py-1 mb-1">
+            <h1 className="text-[14px] font-medium text-[#D4D4D4]">🧠 Brayn</h1>
             <button
               onClick={() => setShowActionMenu(!showActionMenu)}
-              className="text-zinc-500 hover:text-zinc-200 text-xl leading-none transition-colors duration-150 w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/8"
+              className="text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] w-6 h-6 flex items-center justify-center rounded-[4px] transition-colors duration-100 text-lg leading-none"
             >
               +
             </button>
           </div>
+
           {showActionMenu && (
-            <div className="absolute top-14 right-2 bg-[#282828] border border-white/10 rounded-lg shadow-lg overflow-hidden z-50">
+            <div className="absolute top-12 right-3 bg-[#252525] border border-[#2A2A2A] rounded-[6px] shadow-xl overflow-hidden z-50 min-w-[160px]">
               <button
-                onClick={() => {
-                  createEmptyNote();
-                  setShowActionMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-all whitespace-nowrap"
+                onClick={() => { createEmptyNote(); setShowActionMenu(false); }}
+                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap"
               >
                 Créer une note
               </button>
               <button
                 onClick={() => { setShowActionMenu(false); setShowNewCategoryForm(true); }}
-                className="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 transition-all whitespace-nowrap border-t border-white/5"
+                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A]"
               >
                 Créer une catégorie
               </button>
             </div>
           )}
+
           {showNewCategoryForm && (
-            <div className="space-y-2 px-2">
+            <div className="space-y-2 mt-2">
               <input
                 type="text"
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
                 placeholder="Nom de la catégorie…"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
                 autoFocus
               />
               <textarea
                 value={newCategoryDesc}
                 onChange={e => setNewCategoryDesc(e.target.value)}
-                placeholder="Description pour l'IA (ex: notes sur le droit, les lois, la justice…)"
+                placeholder="Description pour l'IA…"
                 rows={2}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 resize-none"
+                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-[12px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-none"
               />
               <div className="flex gap-2">
                 <button
                   onClick={createNewCategory}
-                  className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs py-1.5 rounded-lg transition-all font-medium"
+                  className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1.5 rounded-[4px] transition-colors duration-100 font-medium"
                 >
                   Créer
                 </button>
                 <button
-                  onClick={() => {
-                    setShowNewCategoryForm(false);
-                    setNewCategoryName('');
-                    setNewCategoryDesc('');
-                  }}
-                  className="flex-1 bg-white/5 hover:bg-white/10 text-zinc-400 text-xs py-1.5 rounded-lg transition-all"
+                  onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(''); setNewCategoryDesc(''); }}
+                  className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1.5 rounded-[4px] transition-colors duration-100"
                 >
                   Annuler
                 </button>
@@ -281,58 +278,56 @@ export default function BraynPage() {
           )}
         </div>
 
-        <div className="text-[10px] text-zinc-600 px-2 pt-2 pb-1 font-semibold tracking-wider uppercase">
-          Vues
-        </div>
+        {/* Nav section */}
+        <div className="px-3 pb-1">
+          <p className="text-[11px] text-[#606060] font-medium uppercase tracking-wider px-1 pt-1 pb-1">Vues</p>
 
-        {/* Expandable "Nouveaux" section */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setExpandNewSection(!expandNewSection)}
-            className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors duration-150 flex items-center justify-between
-              ${section === 'new' ? 'bg-white/10 text-white font-medium' : 'text-zinc-300 hover:text-white hover:bg-white/5'}`}
-          >
-            <span className="flex items-center gap-2 flex-1">
-              <span className={`text-[9px] transition-transform duration-150 ${expandNewSection ? 'rotate-90' : ''}`}>▶</span>
-              Nouveaux
-            </span>
-            {newCount > 0 && (
-              <span className="bg-indigo-500/80 text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
-                {newCount}
+          {/* Expandable "Nouveaux" section */}
+          <div>
+            <button
+              onClick={() => setExpandNewSection(!expandNewSection)}
+              className={`w-full text-left px-2 py-[5px] rounded-[4px] text-[14px] transition-colors duration-100 flex items-center justify-between
+                ${section === 'new' ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]' : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'}`}
+            >
+              <span className="flex items-center gap-1.5 flex-1">
+                <span className={`text-[8px] transition-transform duration-100 opacity-60 ${expandNewSection ? 'rotate-90' : ''}`}>▶</span>
+                Nouveaux
               </span>
-            )}
-          </button>
-          {expandNewSection && (
-            <div className="pl-6 space-y-1 max-h-48 overflow-y-auto">
-              {getNewNotes().length === 0 ? (
-                <p className="text-xs text-zinc-600 py-2">Aucune note</p>
-              ) : (
-                getNewNotes().map(note => (
-                  <button
-                    key={note.id}
-                    onClick={() => {
-                      setSection('new');
-                      openNote(note);
-                    }}
-                    className={`w_full text-left px-2.5 py-1.5 rounded-lg text-xs transition-all truncate
-                      ${
-                        selected?.id === note.id
-                          ? 'bg-indigo-500/20 text-indigo-300'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                      }`}
-                  >
-                    {note.clean_original_language ?? note.original_text}
-                  </button>
-                ))
+              {newCount > 0 && (
+                <span className="bg-[#2E7CD1] text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
+                  {newCount}
+                </span>
               )}
-            </div>
-          )}
+            </button>
+            {expandNewSection && (
+              <div className="pl-5 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
+                {getNewNotes().length === 0 ? (
+                  <p className="text-[12px] text-[#606060] py-2 px-2">Aucune note</p>
+                ) : (
+                  getNewNotes().map(note => (
+                    <button
+                      key={note.id}
+                      onClick={() => { setSection('new'); openNote(note); }}
+                      className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate
+                        ${selected?.id === note.id
+                          ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
+                          : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
+                        }`}
+                    >
+                      {note.clean_original_language ?? note.original_text}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {sidebarItem('Tous', 'all')}
         </div>
 
-        {sidebarItem('Tous', 'all')}
-
-        <div className="text-[10px] text-zinc-600 px-2 pt-4 pb-1 font-semibold tracking-wider uppercase">
-          Catégories
+        {/* Categories section */}
+        <div className="px-3 mt-2">
+          <p className="text-[11px] text-[#606060] font-medium uppercase tracking-wider px-1 pt-1 pb-1">Catégories</p>
         </div>
         {getAllCategories().map(cat => {
           const isBuiltin = ALL_CATEGORIES.includes(cat as NoteCategory);
@@ -389,7 +384,7 @@ export default function BraynPage() {
                     value={editingCatName}
                     onChange={e => setEditingCatName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSave()}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                    className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[13px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
                     autoFocus
                   />
                   <textarea
@@ -397,18 +392,18 @@ export default function BraynPage() {
                     onChange={e => setEditingCatDesc(e.target.value)}
                     placeholder="Description pour l'IA…"
                     rows={2}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50 resize-none"
+                    className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[12px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-none"
                   />
                   <div className="flex gap-1.5">
                     <button
                       onClick={handleSave}
-                      className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs py-1 rounded-lg transition-all"
+                      className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1 rounded-[4px] transition-colors duration-100"
                     >
                       Sauvegarder
                     </button>
                     <button
                       onClick={() => setEditingCatId(null)}
-                      className="flex-1 bg-white/5 hover:bg-white/10 text-zinc-400 text-xs py-1 rounded-lg transition-all"
+                      className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1 rounded-[4px] transition-colors duration-100"
                     >
                       Annuler
                     </button>
@@ -416,10 +411,10 @@ export default function BraynPage() {
                 </div>
               ) : (
                 <div
-                  className={`group flex items-center rounded-lg transition-all ${
+                  className={`group flex items-center rounded-[4px] transition-colors duration-100 ${
                     dragOverCat === cat && draggedNote && dragSourceCat !== cat
-                      ? 'bg-indigo-500/15 ring-1 ring-indigo-500/40'
-                      : 'hover:bg-white/5'
+                      ? 'bg-[#2E7CD1]/10 outline outline-1 outline-[#2E7CD1]/30'
+                      : 'hover:bg-[#2A2A2A]'
                   }`}
                   onDragOver={e => { e.preventDefault(); setDragOverCat(cat); }}
                   onDragLeave={() => setDragOverCat(null)}
@@ -436,27 +431,23 @@ export default function BraynPage() {
                 >
                   <button
                     onClick={() => toggleCategoryExpand(cat)}
-                    className="flex-1 text-left px-3 py-1.5 text-sm flex items-center gap-2 text-zinc-300 group-hover:text-white transition-colors duration-150"
+                    className="flex-1 text-left px-2 py-[5px] text-[14px] flex items-center gap-1.5 text-[#9B9B9B] group-hover:text-[#D4D4D4] transition-colors duration-100"
                   >
-                    <span className={`text-[9px] transition-transform duration-150 text-zinc-500 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                    <span className={`text-[8px] opacity-50 transition-transform duration-100 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                     {label}
                   </button>
-                  <span className="text-[11px] text-zinc-400 pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
+                  <span className="text-[11px] text-[#606060] pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
                   <div className="hidden group-hover:flex items-center gap-0.5 pr-1.5">
                     <button
-                      onClick={() => {
-                        setEditingCatId(cat);
-                        setEditingCatName(label);
-                        setEditingCatDesc(description);
-                      }}
-                      className="text-zinc-500 hover:text-zinc-300 text-xs px-1 py-0.5 rounded transition-all"
+                      onClick={() => { setEditingCatId(cat); setEditingCatName(label); setEditingCatDesc(description); }}
+                      className="text-[#606060] hover:text-[#D4D4D4] text-xs px-1 py-0.5 rounded-[4px] transition-colors duration-100"
                       title="Renommer"
                     >
                       ✎
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="text-zinc-500 hover:text-red-400 text-xs px-1 py-0.5 rounded transition-all"
+                      className="text-[#606060] hover:text-red-400 text-xs px-1 py-0.5 rounded-[4px] transition-colors duration-100"
                       title="Supprimer"
                     >
                       ×
@@ -465,9 +456,9 @@ export default function BraynPage() {
                 </div>
               )}
               {isExpanded && !isEditing && (
-                <div className="pl-6 space-y-1 max-h-48 overflow-y-auto">
+                <div className="pl-5 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
                   {categoryNotes.length === 0 ? (
-                    <p className="text-xs text-zinc-600 py-2">Aucune note</p>
+                    <p className="text-[12px] text-[#606060] py-2 px-2">Aucune note</p>
                   ) : (
                     categoryNotes.map(note => (
                       <button
@@ -476,13 +467,12 @@ export default function BraynPage() {
                         onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat); }}
                         onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
                         onClick={() => openNote(note)}
-                        className={`w-full text-left px-2.5 py-1 rounded-md text-xs transition-colors duration-150 truncate cursor-grab active:cursor-grabbing
-                          ${
-                            draggedNote?.id === note.id
-                              ? 'opacity-30'
-                              : selected?.id === note.id
-                              ? 'bg-indigo-500/15 text-indigo-300'
-                              : 'text-zinc-300 hover:text-white hover:bg-white/5'
+                        className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate cursor-grab active:cursor-grabbing
+                          ${draggedNote?.id === note.id
+                            ? 'opacity-30'
+                            : selected?.id === note.id
+                            ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
+                            : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
                           }`}
                       >
                         {note.clean_original_language ?? note.original_text}
@@ -497,12 +487,12 @@ export default function BraynPage() {
       </aside>
 
       {/* Zone principale */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-[#191919]">
         {/* Barre de recherche */}
-        <div className="px-5 pt-4 pb-3 border-b border-white/[0.06] space-y-2.5 shrink-0">
+        <div className="px-6 pt-4 pb-3 border-b border-[#2A2A2A] space-y-2.5 shrink-0">
           <div className="flex gap-2 items-center">
             <div className="flex-1 relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#606060] pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
               <input
@@ -510,13 +500,13 @@ export default function BraynPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Rechercher dans mon cerveau…"
-                className="w-full bg-white/5 border border-white/[0.08] rounded-lg pl-8 pr-4 py-2 text-sm placeholder-zinc-600 text-white focus:outline-none focus:border-white/20 focus:bg-white/6 transition-colors duration-150"
+                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] pl-8 pr-4 py-[7px] text-[14px] placeholder-[#606060] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
               />
             </div>
             <select
               value={filterPeriod}
               onChange={e => setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')}
-              className="bg-white/5 border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-zinc-400 focus:outline-none focus:border-white/20 transition-colors duration-150 hover:border-white/15 cursor-pointer"
+              className="bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-[7px] text-[13px] text-[#9B9B9B] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100 hover:border-[#333] cursor-pointer"
             >
               <option value="all">Tout</option>
               <option value="today">Aujourd&apos;hui</option>
@@ -529,10 +519,10 @@ export default function BraynPage() {
               <button
                 key={cat}
                 onClick={() => setFilterCat(filterCat === cat ? null : cat)}
-                className={`px-2.5 py-0.5 rounded-full text-[11px] border whitespace-nowrap transition-colors duration-150
+                className={`px-2.5 py-[3px] rounded-[4px] text-[12px] border whitespace-nowrap transition-colors duration-100
                   ${filterCat === cat
                     ? CATEGORY_COLORS[cat]
-                    : `bg-transparent ${CATEGORY_OUTLINE[cat]} opacity-60 hover:opacity-100`
+                    : `bg-transparent ${CATEGORY_OUTLINE[cat]} opacity-50 hover:opacity-90`
                   }`}
               >
                 {CATEGORY_LABELS[cat]}
@@ -541,46 +531,42 @@ export default function BraynPage() {
           </div>
         </div>
 
-        {/* Contenu — note ouverte ou état vide */}
+        {/* Contenu — note ouverte ou liste ou état vide */}
         {selected ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Top bar — minimal */}
-            <div className="flex items-center justify-between px-6 py-2 border-b border-white/[0.06] shrink-0">
-              <span className="text-[11px] text-zinc-700 font-mono">{selected.id.slice(0, 8)}…</span>
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-8 py-2 border-b border-[#2A2A2A] shrink-0">
+              <span className="text-[11px] text-[#606060] font-mono">{selected.id.slice(0, 8)}…</span>
               <button
                 onClick={() => setSelected(null)}
-                className="text-zinc-600 hover:text-zinc-300 text-xl leading-none transition-colors duration-150 w-6 h-6 flex items-center justify-center rounded hover:bg-white/5"
+                className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
               >
                 ×
               </button>
             </div>
 
-            {/* Page Notion-style */}
-            <div className="flex-1 flex flex-col overflow-hidden px-10 pt-6">
+            {/* Page content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="w-full max-w-[900px] mx-auto px-8 pt-10 flex flex-col flex-1 min-h-0">
 
-                {/* Header compact */}
-                <div className="shrink-0 mb-3">
-                  <h1 className="text-2xl font-bold text-white mb-3 leading-snug">
+                {/* Title */}
+                <div className="shrink-0 mb-4">
+                  <h1 className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug">
                     {selected.clean_original_language ?? selected.original_text}
                   </h1>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-xs text-zinc-600">{formatDate(selected.created_at)}</span>
-                    <span className="text-xs text-zinc-700">·</span>
-                    <span className="text-xs text-zinc-600 capitalize">{selected.source}</span>
-                    {selected.categories.length > 0 && <span className="text-xs text-zinc-700">·</span>}
+                    <span className="text-[13px] text-[#9B9B9B]">{formatDate(selected.created_at)}</span>
+                    <span className="text-[#2A2A2A]">·</span>
+                    <span className="text-[13px] text-[#9B9B9B] capitalize">{selected.source}</span>
+                    {selected.categories.length > 0 && <span className="text-[#2A2A2A]">·</span>}
                     {selected.categories.map(cat => (
                       <span
                         key={cat}
-                        className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${CATEGORY_COLORS[cat]}`}
+                        className={`text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1 ${CATEGORY_COLORS[cat]}`}
                       >
                         {CATEGORY_LABELS[cat]}
                         <button
-                          onClick={() =>
-                            updateNoteCategories(
-                              selected,
-                              selected.categories.filter(c => c !== cat),
-                            )
-                          }
+                          onClick={() => updateNoteCategories(selected, selected.categories.filter(c => c !== cat))}
                           className="opacity-50 hover:opacity-100 leading-none"
                         >
                           ×
@@ -595,7 +581,7 @@ export default function BraynPage() {
                           updateNoteCategories(selected, [...selected.categories, cat]);
                         }
                       }}
-                      className="text-xs bg-transparent border border-white/10 rounded-full px-2 py-0.5 text-zinc-600 focus:outline-none hover:border-white/20 hover:text-zinc-300 cursor-pointer transition-all"
+                      className="text-[12px] bg-transparent border border-[#2A2A2A] rounded-[4px] px-2 py-[2px] text-[#9B9B9B] focus:outline-none hover:border-[#333] hover:text-[#D4D4D4] cursor-pointer transition-colors duration-100"
                     >
                       <option value="">+ Catégorie</option>
                       {ALL_CATEGORIES.filter(c => !selected.categories.includes(c)).map(cat => (
@@ -605,10 +591,10 @@ export default function BraynPage() {
                   </div>
                 </div>
 
-                <div className="border-b border-white/5 mb-3 shrink-0" />
+                <div className="border-b border-[#2A2A2A] mb-4 shrink-0" />
 
-                {/* Éditeur — remplit tout l'espace restant */}
-                <div className="flex-1 min-h-0 pb-4 flex flex-col">
+                {/* Editor */}
+                <div className="flex-1 min-h-0 pb-8 flex flex-col">
                   <NoteEditor
                     noteId={selected.id}
                     initialFullText={
@@ -627,45 +613,48 @@ export default function BraynPage() {
                     }
                   />
                 </div>
+              </div>
             </div>
           </div>
         ) : section === 'all' ? (
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {loading ? (
-              <p className="text-zinc-600 text-sm">Chargement…</p>
-            ) : notes.length === 0 ? (
-              <p className="text-zinc-600 text-sm">Aucune note</p>
-            ) : (
-              <div className="space-y-1.5">
-                {notes.map(note => (
-                  <button
-                    key={note.id}
-                    onClick={() => openNote(note)}
-                    className="w-full text-left px-4 py-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] hover:border-white/10 transition-colors duration-150 group"
-                  >
-                    <p className="text-sm text-zinc-200 truncate group-hover:text-white transition-colors duration-150">
-                      {note.clean_original_language ?? note.original_text}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-[11px] text-zinc-600">{formatDate(note.created_at)}</span>
-                      {note.categories.slice(0, 2).map(cat => (
-                        <span key={cat} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${CATEGORY_COLORS[cat]}`}>
-                          {CATEGORY_LABELS[cat]}
-                        </span>
-                      ))}
-                      {!note.seen && (
-                        <span className="text-[10px] text-indigo-400 font-medium">Nouveau</span>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-[900px] mx-auto px-8 py-6">
+              {loading ? (
+                <p className="text-[#606060] text-[14px]">Chargement…</p>
+              ) : notes.length === 0 ? (
+                <p className="text-[#606060] text-[14px]">Aucune note</p>
+              ) : (
+                <div className="space-y-1">
+                  {notes.map(note => (
+                    <button
+                      key={note.id}
+                      onClick={() => openNote(note)}
+                      className="w-full text-left px-4 py-3 rounded-[6px] bg-[#252525] hover:bg-[#2A2A2A] border border-[#2A2A2A] hover:border-[#333] transition-colors duration-100 group"
+                    >
+                      <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
+                        {note.clean_original_language ?? note.original_text}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
+                        {note.categories.slice(0, 2).map(cat => (
+                          <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${CATEGORY_COLORS[cat]}`}>
+                            {CATEGORY_LABELS[cat]}
+                          </span>
+                        ))}
+                        {!note.seen && (
+                          <span className="text-[11px] text-[#2E7CD1] font-medium">Nouveau</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 select-none">
-            <span className="text-4xl opacity-20">🧠</span>
-            <p className="text-zinc-600 text-sm">Sélectionne une note dans la sidebar</p>
+            <span className="text-4xl opacity-10">🧠</span>
+            <p className="text-[#606060] text-[14px]">Sélectionne une note dans la sidebar</p>
           </div>
         )}
       </main>
