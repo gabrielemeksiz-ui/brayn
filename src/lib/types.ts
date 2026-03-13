@@ -102,7 +102,6 @@ export interface AIClassificationResponse {
 
 export interface AIRewriteResponse {
   clean_original_language: string;
-  clean_other_language: string;
 }
 
 export interface IngestPayload {

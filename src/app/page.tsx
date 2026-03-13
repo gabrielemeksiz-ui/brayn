@@ -717,17 +717,7 @@ export default function BraynPage() {
                   noteId={selected.id}
                   initialFullText={
                     selected.full_text ??
-                    [
-                      selected.original_text,
-                      '',
-                      '---',
-                      '',
-                      'VERSION PROPRE',
-                      selected.clean_original_language ?? '',
-                      '',
-                      'TRADUCTION',
-                      selected.clean_other_language ?? '',
-                    ].join('\n')
+                    selected.clean_original_language ?? selected.original_text ?? ''
                   }
                 />
               </div>
