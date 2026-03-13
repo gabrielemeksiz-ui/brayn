@@ -506,7 +506,7 @@ export default function BraynPage() {
                         draggable
                         onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat); }}
                         onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
-                        onClick={() => openNote(note)}
+                        onClick={() => { setSection(cat as Section); openNote(note); }}
                         className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate cursor-grab active:cursor-grabbing
                           ${draggedNote?.id === note.id
                             ? 'opacity-30'
