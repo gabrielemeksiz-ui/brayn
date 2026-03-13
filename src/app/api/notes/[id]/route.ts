@@ -5,6 +5,7 @@ const ALLOWED_FIELDS = [
   "seen",
   "categories",
   "full_text",
+  "original_text",
   "clean_original_language",
   "clean_other_language",
 ] as const;
