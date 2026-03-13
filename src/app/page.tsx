@@ -121,6 +121,16 @@ export default function BraynPage() {
     setSelected({ ...note, seen: true });
     setChatMessages([]);
     setChatInput('');
+
+    // Expand la première catégorie de la note dans la sidebar
+    if (note.categories.length > 0) {
+      setExpandedCategories(prev => {
+        const next = new Set(prev);
+        note.categories.forEach(cat => next.add(cat));
+        return next;
+      });
+    }
+
     // Charger l'historique du chat
     fetch(`/api/notes/${note.id}/chat`)
       .then(r => r.json())
@@ -221,7 +231,7 @@ export default function BraynPage() {
   const sidebarItem = (label: string, value: Section, badge?: number) => (
     <button
       key={value}
-      onClick={() => setSection(value)}
+      onClick={() => { setSection(value); setSelected(null); }}
       className={`w-full text-left px-2 py-[5px] rounded-[4px] text-[14px] transition-colors duration-100 flex items-center justify-between
         ${section === value
           ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
