@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
@@ -32,6 +32,14 @@ export default function BraynPage() {
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
+
+  // Chat IA
+  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; created_at: string };
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const fetchAllNotes = useCallback(async () => {
     const res = await fetch('/api/notes');
@@ -96,6 +104,13 @@ export default function BraynPage() {
     console.log('openNote id =', note.id, 'seen =', note.seen);
 
     setSelected({ ...note, seen: true });
+    setChatMessages([]);
+    setChatInput('');
+    // Charger l'historique du chat
+    fetch(`/api/notes/${note.id}/chat`)
+      .then(r => r.json())
+      .then(data => setChatMessages(Array.isArray(data) ? data : []))
+      .catch(() => {});
 
     if (!note.seen) {
       try {
@@ -533,18 +548,39 @@ export default function BraynPage() {
 
         {/* Contenu — note ouverte ou liste ou état vide */}
         {selected ? (
-          <div className="flex-1 overflow-y-auto">
-            <div className="w-full max-w-[900px] mx-auto px-8 pt-6 pb-24">
+          <div className="flex-1 flex flex-col overflow-hidden">
 
-              {/* Close button */}
-              <div className="flex justify-end mb-6">
-                <button
-                  onClick={() => setSelected(null)}
-                  className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
-                >
-                  ×
-                </button>
-              </div>
+            {/* Zone note — scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="w-full max-w-[900px] mx-auto px-8 pt-6 pb-16">
+
+                {/* Top actions */}
+                <div className="flex justify-end items-center gap-2 mb-6">
+                  <button
+                    onClick={() => setShowChat(v => !v)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] transition-colors duration-100 border
+                      ${showChat
+                        ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
+                        : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
+                      }`}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Chat IA
+                    {chatMessages.length > 0 && (
+                      <span className="text-[10px] bg-[#2E7CD1] text-white rounded-full px-1.5 py-0.5 font-mono tabular-nums">
+                        {chatMessages.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
+                  >
+                    ×
+                  </button>
+                </div>
 
                 {/* Title */}
                 <div className="mb-4">
@@ -608,7 +644,132 @@ export default function BraynPage() {
                     ].join('\n')
                   }
                 />
+              </div>
             </div>
+
+            {/* Panneau Chat IA — fixe en bas */}
+            {showChat && (
+              <div className="h-[320px] shrink-0 border-t border-[#2A2A2A] flex flex-col bg-[#191919]">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2A2A2A] shrink-0">
+                  <div className="flex items-center gap-2">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2E7CD1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span className="text-[13px] font-medium text-[#D4D4D4]">Chat IA</span>
+                    <span className="text-[12px] text-[#606060]">— réfléchissons ensemble</span>
+                  </div>
+                  <button
+                    onClick={() => setShowChat(false)}
+                    className="text-[#606060] hover:text-[#D4D4D4] w-5 h-5 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100 text-base leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                  {chatMessages.length === 0 && (
+                    <p className="text-[13px] text-[#606060] text-center pt-6">
+                      Pose une question sur cette note…
+                    </p>
+                  )}
+                  {chatMessages.map(msg => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-[6px] text-[13px] leading-relaxed whitespace-pre-wrap
+                          ${msg.role === 'user'
+                            ? 'bg-[#2E7CD1] text-white rounded-br-[2px]'
+                            : 'bg-[#252525] text-[#D4D4D4] border border-[#2A2A2A] rounded-bl-[2px]'
+                          }`}
+                      >
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-[#252525] border border-[#2A2A2A] rounded-[6px] rounded-bl-[2px] px-3 py-2">
+                        <span className="flex gap-1 items-center">
+                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
+                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+
+                {/* Input */}
+                <div className="px-4 py-3 border-t border-[#2A2A2A] shrink-0">
+                  <form
+                    onSubmit={async e => {
+                      e.preventDefault();
+                      const msg = chatInput.trim();
+                      if (!msg || chatLoading) return;
+                      const optimistic: ChatMessage = {
+                        id: Date.now().toString(),
+                        role: 'user',
+                        content: msg,
+                        created_at: new Date().toISOString(),
+                      };
+                      setChatMessages(prev => [...prev, optimistic]);
+                      setChatInput('');
+                      setChatLoading(true);
+                      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                      try {
+                        const res = await fetch(`/api/notes/${selected.id}/chat`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ message: msg }),
+                        });
+                        const data = await res.json();
+                        const reply: ChatMessage = {
+                          id: (Date.now() + 1).toString(),
+                          role: 'assistant',
+                          content: data.reply ?? 'Erreur',
+                          created_at: new Date().toISOString(),
+                        };
+                        setChatMessages(prev => [...prev, reply]);
+                      } catch {
+                        setChatMessages(prev => [...prev, {
+                          id: (Date.now() + 1).toString(),
+                          role: 'assistant',
+                          content: 'Erreur de connexion.',
+                          created_at: new Date().toISOString(),
+                        }]);
+                      } finally {
+                        setChatLoading(false);
+                        setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                      }
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      placeholder="Écris ton message…"
+                      disabled={chatLoading}
+                      className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100 disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={chatLoading || !chatInput.trim()}
+                      className="bg-[#2E7CD1] hover:bg-[#2568B8] text-white px-3 py-2 rounded-[4px] text-[13px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         ) : section === 'all' ? (
           <div className="flex-1 overflow-y-auto">
