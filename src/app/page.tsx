@@ -252,6 +252,14 @@ export default function BraynPage() {
     return [...ALL_CATEGORIES, ...customCategories.map(c => c.id)].filter(c => !hiddenCategories.has(c));
   };
 
+  const getCatLabel = (cat: string): string => {
+    return categoryOverrides[cat]?.label || CATEGORY_LABELS[cat as NoteCategory] || customCategories.find(c => c.id === cat)?.label || cat;
+  };
+
+  const getCatColor = (cat: string): string => {
+    return CATEGORY_COLORS[cat as NoteCategory] || 'border-[#555] text-[#B0B0B0]';
+  };
+
   const updateNoteCategories = async (note: Note, newCategories: NoteCategory[]) => {
     const updated = { ...note, categories: newCategories };
     setSelected(updated);
@@ -591,17 +599,17 @@ export default function BraynPage() {
             </select>
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            {ALL_CATEGORIES.map(cat => (
+            {getAllCategories().map(cat => (
               <button
                 key={cat}
-                onClick={() => setFilterCat(filterCat === cat ? null : cat)}
+                onClick={() => setFilterCat(filterCat === cat ? null : cat as NoteCategory)}
                 className={`px-2.5 py-[3px] rounded-[4px] text-[12px] border whitespace-nowrap transition-colors duration-100
                   ${filterCat === cat
-                    ? CATEGORY_COLORS[cat]
-                    : `bg-transparent ${CATEGORY_OUTLINE[cat]} opacity-50 hover:opacity-90`
+                    ? getCatColor(cat)
+                    : `bg-transparent ${CATEGORY_OUTLINE[cat as NoteCategory] || 'border-[#555]'} opacity-50 hover:opacity-90`
                   }`}
               >
-                {CATEGORY_LABELS[cat]}
+                {getCatLabel(cat)}
               </button>
             ))}
           </div>
@@ -681,9 +689,9 @@ export default function BraynPage() {
                     {selected.categories.map(cat => (
                       <span
                         key={cat}
-                        className={`text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1 ${CATEGORY_COLORS[cat]}`}
+                        className={`text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1 ${getCatColor(cat)}`}
                       >
-                        {CATEGORY_LABELS[cat]}
+                        {getCatLabel(cat)}
                         <button
                           onClick={() => updateNoteCategories(selected, selected.categories.filter(c => c !== cat))}
                           className="opacity-50 hover:opacity-100 leading-none"
@@ -703,8 +711,8 @@ export default function BraynPage() {
                       className="text-[12px] bg-transparent border border-[#2A2A2A] rounded-[4px] px-2 py-[2px] text-[#9B9B9B] focus:outline-none hover:border-[#333] hover:text-[#D4D4D4] cursor-pointer transition-colors duration-100"
                     >
                       <option value="">+ Catégorie</option>
-                      {ALL_CATEGORIES.filter(c => !selected.categories.includes(c)).map(cat => (
-                        <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+                      {getAllCategories().filter(c => !selected.categories.includes(c as NoteCategory)).map(cat => (
+                        <option key={cat} value={cat}>{getCatLabel(cat)}</option>
                       ))}
                     </select>
                   </div>
@@ -924,8 +932,8 @@ export default function BraynPage() {
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
                             {note.categories.slice(0, 2).map(cat => (
-                              <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${CATEGORY_COLORS[cat]}`}>
-                                {CATEGORY_LABELS[cat]}
+                              <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${getCatColor(cat)}`}>
+                                {getCatLabel(cat)}
                               </span>
                             ))}
                             {!note.seen && (
