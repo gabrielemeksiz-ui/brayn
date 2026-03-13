@@ -220,14 +220,14 @@ export default function BraynPage() {
   const saveTitle = async () => {
     if (!selected || !titleValue.trim()) return;
     const newTitle = titleValue.trim();
-    setSelected(prev => prev ? { ...prev, clean_original_language: newTitle, original_text: newTitle } : prev);
-    setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, clean_original_language: newTitle, original_text: newTitle } : n));
-    setAllNotes(prev => prev.map(n => n.id === selected.id ? { ...n, clean_original_language: newTitle, original_text: newTitle } : n));
+    setSelected(prev => prev ? { ...prev, original_text: newTitle } : prev);
+    setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, original_text: newTitle } : n));
+    setAllNotes(prev => prev.map(n => n.id === selected.id ? { ...n, original_text: newTitle } : n));
     setEditingTitle(false);
     await fetch(`/api/notes/${selected.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clean_original_language: newTitle, original_text: newTitle }),
+      body: JSON.stringify({ original_text: newTitle }),
     });
   };
 
@@ -390,7 +390,7 @@ export default function BraynPage() {
                           : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
                         }`}
                     >
-                      {note.clean_original_language ?? note.original_text}
+                      {note.original_text}
                     </button>
                   ))
                 )}
@@ -551,7 +551,7 @@ export default function BraynPage() {
                             : 'text-[#C8C8C8] hover:text-white hover:bg-[#2A2A2A]'
                           }`}
                       >
-                        {note.clean_original_language ?? note.original_text}
+                        {note.original_text}
                       </button>
                     ))
                   )}
@@ -667,10 +667,10 @@ export default function BraynPage() {
                   ) : (
                     <h1
                       className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug cursor-text hover:text-white transition-colors duration-100"
-                      onClick={() => { setEditingTitle(true); setTitleValue(selected.clean_original_language ?? selected.original_text ?? ''); setTimeout(() => titleInputRef.current?.select(), 30); }}
+                      onClick={() => { setEditingTitle(true); setTitleValue(selected.original_text ?? ''); setTimeout(() => titleInputRef.current?.select(), 30); }}
                       title="Cliquer pour modifier le titre"
                     >
-                      {selected.clean_original_language ?? selected.original_text}
+                      {selected.original_text}
                     </h1>
                   )}
                   <div className="flex items-center gap-3 flex-wrap">
@@ -919,7 +919,7 @@ export default function BraynPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
-                            {note.clean_original_language ?? note.original_text}
+                            {note.original_text}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
