@@ -513,17 +513,17 @@ export default function BraynPage() {
                     {label}
                   </button>
                   <span className="text-[11px] text-[#606060] pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
-                  <div className="hidden group-hover:flex items-center gap-0.5 pr-1.5">
+                  <div className="hidden group-hover:flex items-center gap-1 pr-1.5">
                     <button
                       onClick={() => { setEditingCatId(cat); setEditingCatName(label); setEditingCatDesc(description); }}
-                      className="text-[#606060] hover:text-[#D4D4D4] text-xs px-1 py-0.5 rounded-[4px] transition-colors duration-100"
+                      className="text-[#909090] hover:text-[#D4D4D4] text-sm w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100"
                       title="Renommer"
                     >
                       ✎
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="text-[#606060] hover:text-red-400 text-xs px-1 py-0.5 rounded-[4px] transition-colors duration-100"
+                      className="text-[#909090] hover:text-red-400 text-sm w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-red-500/10 transition-colors duration-100"
                       title="Supprimer"
                     >
                       ×
@@ -548,7 +548,7 @@ export default function BraynPage() {
                             ? 'opacity-30'
                             : selected?.id === note.id
                             ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
-                            : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
+                            : 'text-[#C8C8C8] hover:text-white hover:bg-[#2A2A2A]'
                           }`}
                       >
                         {note.clean_original_language ?? note.original_text}
