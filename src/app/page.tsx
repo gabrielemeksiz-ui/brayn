@@ -55,6 +55,24 @@ export default function BraynPage() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+
+  // Titre éditable inline
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Fermer le menu action au clic extérieur
+  useEffect(() => {
+    if (!showActionMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setShowActionMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showActionMenu]);
 
   const fetchAllNotes = useCallback(async () => {
     const res = await fetch('/api/notes');
@@ -178,21 +196,39 @@ export default function BraynPage() {
 
   const createEmptyNote = async () => {
     try {
-      const res = await fetch('/api/notes/ingest', {
+      setShowActionMenu(false);
+      const res = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: ' ', source: 'desktop', customCategories }),
+        body: JSON.stringify({ title: 'Nouvelle note', source: 'desktop' }),
       });
-
-      if (res.ok) {
-        const { note } = await res.json();
-        setShowActionMenu(false);
-        await Promise.all([fetchNotes(), fetchAllNotes()]);
-        if (note) openNote(note);
+      if (!res.ok) return;
+      const { note } = await res.json();
+      await Promise.all([fetchNotes(), fetchAllNotes()]);
+      if (note) {
+        setSection('new');
+        openNote(note);
+        setEditingTitle(true);
+        setTitleValue('Nouvelle note');
+        setTimeout(() => titleInputRef.current?.select(), 80);
       }
     } catch (err) {
       console.error('Failed to create note:', err);
     }
+  };
+
+  const saveTitle = async () => {
+    if (!selected || !titleValue.trim()) return;
+    const newTitle = titleValue.trim();
+    setSelected(prev => prev ? { ...prev, clean_original_language: newTitle, original_text: newTitle } : prev);
+    setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, clean_original_language: newTitle, original_text: newTitle } : n));
+    setAllNotes(prev => prev.map(n => n.id === selected.id ? { ...n, clean_original_language: newTitle, original_text: newTitle } : n));
+    setEditingTitle(false);
+    await fetch(`/api/notes/${selected.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clean_original_language: newTitle, original_text: newTitle }),
+    });
   };
 
   const createNewCategory = async () => {
@@ -267,7 +303,7 @@ export default function BraynPage() {
           </div>
 
           {showActionMenu && (
-            <div className="absolute top-12 right-3 bg-[#252525] border border-[#2A2A2A] rounded-[6px] shadow-xl overflow-hidden z-50 min-w-[160px]">
+            <div ref={actionMenuRef} className="absolute top-12 right-3 bg-[#252525] border border-[#2A2A2A] rounded-[6px] shadow-xl overflow-hidden z-50 min-w-[160px]">
               <button
                 onClick={() => { createEmptyNote(); setShowActionMenu(false); }}
                 className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap"
@@ -618,9 +654,25 @@ export default function BraynPage() {
 
                 {/* Title */}
                 <div className="mb-4">
-                  <h1 className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug">
-                    {selected.clean_original_language ?? selected.original_text}
-                  </h1>
+                  {editingTitle ? (
+                    <input
+                      ref={titleInputRef}
+                      value={titleValue}
+                      onChange={e => setTitleValue(e.target.value)}
+                      onBlur={saveTitle}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); saveTitle(); } if (e.key === 'Escape') setEditingTitle(false); }}
+                      className="w-full bg-transparent text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug focus:outline-none border-b border-[#2E7CD1] pb-1"
+                      autoFocus
+                    />
+                  ) : (
+                    <h1
+                      className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug cursor-text hover:text-white transition-colors duration-100"
+                      onClick={() => { setEditingTitle(true); setTitleValue(selected.clean_original_language ?? selected.original_text ?? ''); setTimeout(() => titleInputRef.current?.select(), 30); }}
+                      title="Cliquer pour modifier le titre"
+                    >
+                      {selected.clean_original_language ?? selected.original_text}
+                    </h1>
+                  )}
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-[13px] text-[#9B9B9B]">{formatDate(selected.created_at)}</span>
                     <span className="text-[#2A2A2A]">·</span>
