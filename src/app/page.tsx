@@ -33,6 +33,21 @@ export default function BraynPage() {
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
 
+  // Suppression
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState<'multi' | string | null>(null); // 'multi' | noteId
+
+  const deleteNotes = async (ids: string[]) => {
+    await Promise.all(ids.map(id => fetch(`/api/notes/${id}`, { method: 'DELETE' })));
+    setAllNotes(prev => prev.filter(n => !ids.includes(n.id)));
+    setNotes(prev => prev.filter(n => !ids.includes(n.id)));
+    if (selected && ids.includes(selected.id)) setSelected(null);
+    setSelectedIds(new Set());
+    setSelectMode(false);
+    setConfirmDelete(null);
+  };
+
   // Chat IA
   type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; created_at: string };
   const [showChat, setShowChat] = useState(false);
@@ -575,6 +590,15 @@ export default function BraynPage() {
                     )}
                   </button>
                   <button
+                    onClick={() => setConfirmDelete(selected.id)}
+                    className="text-[#606060] hover:text-red-400 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-red-500/10 transition-colors duration-100"
+                    title="Supprimer cette note"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                  <button
                     onClick={() => setSelected(null)}
                     className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
                   >
@@ -774,34 +798,92 @@ export default function BraynPage() {
         ) : section === 'all' ? (
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-[900px] mx-auto px-8 py-6">
+              {/* Toolbar sélection */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[13px] text-[#9B9B9B]">{notes.length} note{notes.length !== 1 ? 's' : ''}</span>
+                <div className="flex items-center gap-2">
+                  {selectMode && selectedIds.size > 0 && (
+                    <button
+                      onClick={() => setConfirmDelete('multi')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors duration-100"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                      Supprimer ({selectedIds.size})
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()); }}
+                    className={`px-3 py-1.5 rounded-[4px] text-[13px] border transition-colors duration-100
+                      ${selectMode
+                        ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
+                        : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
+                      }`}
+                  >
+                    {selectMode ? 'Annuler' : 'Sélectionner'}
+                  </button>
+                </div>
+              </div>
+
               {loading ? (
                 <p className="text-[#606060] text-[14px]">Chargement…</p>
               ) : notes.length === 0 ? (
                 <p className="text-[#606060] text-[14px]">Aucune note</p>
               ) : (
                 <div className="space-y-1">
-                  {notes.map(note => (
-                    <button
-                      key={note.id}
-                      onClick={() => openNote(note)}
-                      className="w-full text-left px-4 py-3 rounded-[6px] bg-[#252525] hover:bg-[#2A2A2A] border border-[#2A2A2A] hover:border-[#333] transition-colors duration-100 group"
-                    >
-                      <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
-                        {note.clean_original_language ?? note.original_text}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
-                        {note.categories.slice(0, 2).map(cat => (
-                          <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${CATEGORY_COLORS[cat]}`}>
-                            {CATEGORY_LABELS[cat]}
-                          </span>
-                        ))}
-                        {!note.seen && (
-                          <span className="text-[11px] text-[#2E7CD1] font-medium">Nouveau</span>
+                  {notes.map(note => {
+                    const isChecked = selectedIds.has(note.id);
+                    return (
+                      <div
+                        key={note.id}
+                        onClick={() => {
+                          if (selectMode) {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              isChecked ? next.delete(note.id) : next.add(note.id);
+                              return next;
+                            });
+                          } else {
+                            openNote(note);
+                          }
+                        }}
+                        className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-[6px] border transition-colors duration-100 cursor-pointer group
+                          ${isChecked
+                            ? 'bg-red-500/10 border-red-500/30'
+                            : 'bg-[#252525] hover:bg-[#2A2A2A] border-[#2A2A2A] hover:border-[#333]'
+                          }`}
+                      >
+                        {selectMode && (
+                          <div className={`w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors duration-100
+                            ${isChecked ? 'bg-red-500 border-red-500' : 'border-[#444]'}`}
+                          >
+                            {isChecked && (
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="2 6 5 9 10 3"/>
+                              </svg>
+                            )}
+                          </div>
                         )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
+                            {note.clean_original_language ?? note.original_text}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
+                            {note.categories.slice(0, 2).map(cat => (
+                              <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${CATEGORY_COLORS[cat]}`}>
+                                {CATEGORY_LABELS[cat]}
+                              </span>
+                            ))}
+                            {!note.seen && (
+                              <span className="text-[11px] text-[#2E7CD1] font-medium">Nouveau</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -813,6 +895,49 @@ export default function BraynPage() {
           </div>
         )}
       </main>
+
+      {/* Modale confirmation suppression */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-[#252525] border border-[#2A2A2A] rounded-[8px] p-6 w-[340px] shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-[6px] bg-red-500/15 flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-[14px] font-medium text-[#D4D4D4]">
+                  {confirmDelete === 'multi'
+                    ? `Supprimer ${selectedIds.size} note${selectedIds.size > 1 ? 's' : ''} ?`
+                    : 'Supprimer cette note ?'}
+                </p>
+                <p className="text-[12px] text-[#606060] mt-0.5">Cette action est irréversible.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end mt-5">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-[13px] rounded-[4px] border border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333] transition-colors duration-100"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmDelete === 'multi') {
+                    deleteNotes(Array.from(selectedIds));
+                  } else {
+                    deleteNotes([confirmDelete]);
+                  }
+                }}
+                className="px-4 py-2 text-[13px] rounded-[4px] bg-red-500 hover:bg-red-600 text-white font-medium transition-colors duration-100"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
