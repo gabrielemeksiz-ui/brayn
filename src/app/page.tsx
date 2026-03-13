@@ -533,21 +533,18 @@ export default function BraynPage() {
 
         {/* Contenu — note ouverte ou liste ou état vide */}
         {selected ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Top bar — sticky */}
-            <div className="flex items-center justify-between px-8 py-2 border-b border-[#2A2A2A] shrink-0 sticky top-0 bg-[#191919] z-10">
-              <span className="text-[11px] text-[#606060] font-mono">{selected.id.slice(0, 8)}…</span>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
-              >
-                ×
-              </button>
-            </div>
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full max-w-[900px] mx-auto px-8 pt-6 pb-24">
 
-            {/* Page content — scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="w-full max-w-[900px] mx-auto px-8 pt-10 pb-24">
+              {/* Close button */}
+              <div className="flex justify-end mb-6">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
+                >
+                  ×
+                </button>
+              </div>
 
                 {/* Title */}
                 <div className="mb-4">
@@ -611,7 +608,6 @@ export default function BraynPage() {
                     ].join('\n')
                   }
                 />
-              </div>
             </div>
           </div>
         ) : section === 'all' ? (
