@@ -8,72 +8,54 @@ interface TweetEmbedProps {
 
 export function TweetEmbed({ url }: TweetEmbedProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoaded(false);
-    setError(false);
+    const timer = setTimeout(() => setLoading(false), 4000);
 
-    const loadWidgets = () => {
+    const render = () => {
       const twttr = (window as any).twttr;
       if (twttr?.widgets) {
         twttr.widgets.load(ref.current);
-        twttr.events?.bind('rendered', () => setLoaded(true));
       }
     };
 
     if (!(window as any).twttr) {
-      const script = document.createElement('script');
-      script.id = 'twitter-wjs';
-      script.src = 'https://platform.twitter.com/widgets.js';
-      script.async = true;
-      script.onload = () => {
-        (window as any).twttr?.ready(() => {
-          loadWidgets();
-          setLoaded(true);
-        });
-      };
-      script.onerror = () => setError(true);
-      document.head.appendChild(script);
+      if (!document.getElementById('twitter-wjs')) {
+        const script = document.createElement('script');
+        script.id = 'twitter-wjs';
+        script.src = 'https://platform.twitter.com/widgets.js';
+        script.async = true;
+        script.onload = () => {
+          (window as any).twttr?.ready(() => {
+            render();
+            setLoading(false);
+          });
+        };
+        document.head.appendChild(script);
+      }
     } else {
-      loadWidgets();
-      // Give it a moment to render
-      setTimeout(() => setLoaded(true), 1500);
+      render();
+      setTimeout(() => setLoading(false), 2000);
     }
+
+    return () => clearTimeout(timer);
   }, [url]);
 
-  if (error) {
-    return (
-      <div className="rounded-xl border border-white/10 bg-white/3 p-4 text-center">
-        <p className="text-xs text-zinc-500">Tweet indisponible</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 block"
-        >
-          Voir sur X →
-        </a>
-      </div>
-    );
-  }
+  // Clean URL — remove query params for Twitter widget compatibility
+  const cleanUrl = url.split('?')[0];
 
   return (
-    <div className="relative">
-      {!loaded && (
-        <div className="rounded-xl border border-white/10 bg-white/3 p-4 flex items-center gap-3">
-          <div className="w-4 h-4 rounded-full border-2 border-zinc-600 border-t-indigo-400 animate-spin" />
-          <span className="text-xs text-zinc-500">Chargement du tweet…</span>
+    <div>
+      {loading && (
+        <div className="rounded-[6px] border border-[#2A2A2A] bg-[#252525] p-4 flex items-center gap-3 mb-2">
+          <div className="w-3.5 h-3.5 rounded-full border-2 border-[#444] border-t-[#2E7CD1] animate-spin shrink-0" />
+          <span className="text-[12px] text-[#606060]">Chargement du tweet…</span>
         </div>
       )}
-      <div
-        ref={ref}
-        className={loaded ? 'block' : 'hidden'}
-        style={{ colorScheme: 'dark' }}
-      >
+      <div ref={ref}>
         <blockquote className="twitter-tweet" data-theme="dark" data-dnt="true">
-          <a href={url} />
+          <a href={cleanUrl} />
         </blockquote>
       </div>
     </div>
