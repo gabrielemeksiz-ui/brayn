@@ -14,6 +14,12 @@ function extractTweetUrls(links: string[], originalText: string): string[] {
   return [...originalText.matchAll(tweetRegex)].map(m => m[0]);
 }
 
+function noteTitle(note: { links: string[]; original_text: string; clean_original_language?: string | null }): string {
+  const isTweet = extractTweetUrls(note.links, note.original_text).length > 0;
+  if (isTweet) return note.clean_original_language ?? note.original_text;
+  return note.original_text;
+}
+
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
 export default function BraynPage() {
@@ -417,7 +423,7 @@ export default function BraynPage() {
                           : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
                         }`}
                     >
-                      {note.clean_original_language ?? note.original_text}
+                      {noteTitle(note)}
                     </button>
                   ))
                 )}
@@ -578,7 +584,7 @@ export default function BraynPage() {
                             : 'text-[#C8C8C8] hover:text-white hover:bg-[#2A2A2A]'
                           }`}
                       >
-                        {note.clean_original_language ?? note.original_text}
+                        {noteTitle(note)}
                       </button>
                     ))
                   )}
@@ -697,7 +703,7 @@ export default function BraynPage() {
                       onClick={() => { setEditingTitle(true); setTitleValue(selected.original_text ?? ''); setTimeout(() => titleInputRef.current?.select(), 30); }}
                       title="Cliquer pour modifier le titre"
                     >
-                      {selected.clean_original_language ?? selected.original_text}
+                      {noteTitle(selected)}
                     </h1>
                   )}
                   <div className="flex items-center gap-3 flex-wrap">
@@ -755,11 +761,11 @@ export default function BraynPage() {
                 {/* Editor */}
                 <NoteEditor
                   noteId={selected.id}
-                  initialFullText={
-                    selected.full_text ??
-                    tweetText ??
-                    selected.clean_original_language ?? selected.original_text ?? ''
-                  }
+                  initialFullText={(() => {
+                    const isTweet = extractTweetUrls(selected.links, selected.original_text).length > 0;
+                    if (isTweet) return tweetText ?? selected.full_text ?? '';
+                    return selected.full_text ?? selected.clean_original_language ?? selected.original_text ?? '';
+                  })()}
                 />
               </div>
             </div>
@@ -960,7 +966,7 @@ export default function BraynPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
-                            {note.clean_original_language ?? note.original_text}
+                            {noteTitle(note)}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
