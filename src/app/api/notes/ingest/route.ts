@@ -47,10 +47,12 @@ export async function POST(req: NextRequest) {
           const oembedData = await oembedRes.json();
           const pMatch = oembedData.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
           const rawText = pMatch?.[1] ?? '';
-          tweetTitle = rawText
+          const fullText = rawText
             .replace(/<[^>]+>/g, '')
             .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
             .trim();
+          const words = fullText.split(/\s+/);
+          tweetTitle = words.length > 15 ? words.slice(0, 15).join(' ') + '…' : fullText;
         }
       } catch {
         // Ignore — title will fall back to URL
