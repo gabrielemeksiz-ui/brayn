@@ -41,18 +41,45 @@ export async function POST(req: NextRequest) {
     if (tweetUrlMatch) {
       try {
         const cleanUrl = text.trim().split('?')[0];
-        const oembedRes = await fetch(
-          `https://publish.twitter.com/oembed?url=${encodeURIComponent(cleanUrl)}&dnt=true&omit_script=true`
-        );
-        if (oembedRes.ok) {
-          const oembedData = await oembedRes.json();
-          const pMatch = oembedData.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
-          const rawText = pMatch?.[1] ?? '';
-          const cleanedText = rawText
-            .replace(/<[^>]+>/g, '')
-            .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
-            .replace(/\s*(https?:\/\/t\.co\/\S+|pic\.twitter\.com\/\S+)/g, '')
-            .trim();
+        const tweetIdMatch = cleanUrl.match(/\/status\/(\d+)/);
+        const tweetId = tweetIdMatch?.[1];
+        const bearerToken = process.env.TWITTER_BEARER_TOKEN;
+        let cleanedText = '';
+
+        // Try Twitter API v2 first (full text)
+        if (tweetId && bearerToken) {
+          const v2Res = await fetch(
+            `https://api.twitter.com/2/tweets/${tweetId}?tweet.fields=text`,
+            { headers: { Authorization: `Bearer ${bearerToken}` } }
+          );
+          if (v2Res.ok) {
+            const v2Data = await v2Res.json();
+            if (v2Data.data?.text) {
+              cleanedText = v2Data.data.text
+                .replace(/\s*(https?:\/\/t\.co\/\S+|pic\.twitter\.com\/\S+)/g, '')
+                .trim();
+            }
+          }
+        }
+
+        // Fallback to oEmbed if API v2 failed or no token
+        if (!cleanedText) {
+          const oembedRes = await fetch(
+            `https://publish.twitter.com/oembed?url=${encodeURIComponent(cleanUrl)}&dnt=true&omit_script=true`
+          );
+          if (oembedRes.ok) {
+            const oembedData = await oembedRes.json();
+            const pMatch = oembedData.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
+            const rawText = pMatch?.[1] ?? '';
+            cleanedText = rawText
+              .replace(/<[^>]+>/g, '')
+              .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+              .replace(/\s*(https?:\/\/t\.co\/\S+|pic\.twitter\.com\/\S+)/g, '')
+              .trim();
+          }
+        }
+
+        if (cleanedText) {
           tweetFullText = cleanedText;
           const words = cleanedText.split(/\s+/);
           tweetTitle = words.length > 15 ? words.slice(0, 15).join(' ') + '…' : cleanedText;
