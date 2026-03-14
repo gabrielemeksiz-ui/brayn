@@ -108,7 +108,15 @@ export async function POST(req: NextRequest) {
     const updates: Record<string, unknown> = {};
 
     if (classifyResult.status === "fulfilled") {
-      updates.categories = classifyResult.value.categories;
+      const cats = classifyResult.value.categories as string[];
+      // Always include 'twitter' category for Twitter URL notes
+      if (tweetUrlMatch && !cats.includes('twitter')) {
+        cats.unshift('twitter');
+      }
+      updates.categories = cats;
+    } else if (tweetUrlMatch) {
+      // AI failed but still tag as twitter
+      updates.categories = ['twitter'];
     }
     if (rewriteResult.status === "fulfilled") {
       updates.clean_original_language =
