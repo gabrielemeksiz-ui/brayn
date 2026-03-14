@@ -5,6 +5,14 @@ import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { NoteEditor } from '@/components/NoteEditor';
+import { TweetEmbed } from '@/components/TweetEmbed';
+
+function extractTweetUrls(links: string[], originalText: string): string[] {
+  const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/gi;
+  const fromLinks = links.filter(l => /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i.test(l));
+  if (fromLinks.length > 0) return fromLinks;
+  return [...originalText.matchAll(tweetRegex)].map(m => m[0]);
+}
 
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
@@ -728,6 +736,19 @@ export default function BraynPage() {
                 </div>
 
                 <div className="border-b border-[#2A2A2A] mb-4" />
+
+                {/* Tweet Embed */}
+                {(() => {
+                  const tweetUrls = extractTweetUrls(selected.links, selected.original_text);
+                  if (tweetUrls.length === 0) return null;
+                  return (
+                    <div className="mb-6 space-y-3">
+                      {tweetUrls.map(url => (
+                        <TweetEmbed key={url} url={url} />
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {/* Editor */}
                 <NoteEditor
