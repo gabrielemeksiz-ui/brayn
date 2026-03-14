@@ -18,8 +18,12 @@ export async function GET(req: NextRequest) {
     // Extract tweet text from oEmbed HTML (<p> inside blockquote)
     const textMatch = data.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
     const rawText = textMatch?.[1] ?? '';
-    // Strip HTML tags from tweet text
-    const text = rawText.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"').trim();
+    // Strip HTML tags and trailing t.co / pic.twitter.com links Twitter appends
+    const text = rawText
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+      .replace(/\s*(https?:\/\/t\.co\/\S+|pic\.twitter\.com\/\S+)/g, '')
+      .trim();
 
     // Extract handle from author_url
     const handle = data.author_url?.split('/').pop() ?? '';
