@@ -14,10 +14,10 @@ function extractTweetUrls(links: string[], originalText: string): string[] {
   return [...originalText.matchAll(tweetRegex)].map(m => m[0]);
 }
 
-function noteTitle(note: { links: string[]; original_text: string; clean_original_language?: string | null }): string {
-  const isTweet = extractTweetUrls(note.links, note.original_text).length > 0;
-  if (isTweet) return note.clean_original_language ?? note.original_text;
-  return note.original_text;
+function noteTitle(note: { links: string[] | null; original_text: string | null; clean_original_language?: string | null }): string {
+  const isTweet = extractTweetUrls(note.links ?? [], note.original_text ?? '').length > 0;
+  if (isTweet) return note.clean_original_language ?? note.original_text ?? '';
+  return note.original_text ?? '';
 }
 
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
