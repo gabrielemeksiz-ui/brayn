@@ -8,7 +8,8 @@ export type NoteCategory =
   | 'finance'
   | 'géopolitique'
   | 'Crypto-Web3'
-  | 'outils';
+  | 'outils'
+  | 'twitter';
 
 export const ALL_CATEGORIES: NoteCategory[] = [
   'business_project',
@@ -21,6 +22,7 @@ export const ALL_CATEGORIES: NoteCategory[] = [
   'géopolitique',
   'Crypto-Web3',
   'outils',
+  'twitter',
 ];
 
 export const CATEGORY_LABELS: Record<NoteCategory, string> = {
@@ -34,6 +36,7 @@ export const CATEGORY_LABELS: Record<NoteCategory, string> = {
   géopolitique: 'Géopolitique',
   'Crypto-Web3': 'Crypto / Web3',
   outils: 'Outils',
+  twitter: 'Twitter',
 };
 
 export const CATEGORY_COLORS: Record<NoteCategory, string> = {
@@ -47,6 +50,7 @@ export const CATEGORY_COLORS: Record<NoteCategory, string> = {
   géopolitique: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
   'Crypto-Web3': 'bg-violet-500/20 text-violet-300 border-violet-500/30',
   outils: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+  twitter: 'bg-[#1D9BF0]/15 text-[#1D9BF0] border-[#1D9BF0]/30',
 };
 
 // Outline only — bordure colorée sans fond
@@ -61,6 +65,7 @@ export const CATEGORY_OUTLINE: Record<NoteCategory, string> = {
   géopolitique: 'border-orange-500/50 text-orange-300',
   'Crypto-Web3': 'border-violet-500/50 text-violet-300',
   outils: 'border-sky-500/50 text-sky-300',
+  twitter: 'border-[#1D9BF0]/50 text-[#1D9BF0]',
 };
 
 // Dot color for sidebar indicator
@@ -75,6 +80,7 @@ export const CATEGORY_DOT: Record<NoteCategory, string> = {
   géopolitique: 'bg-orange-400',
   'Crypto-Web3': 'bg-violet-400',
   outils: 'bg-sky-400',
+  twitter: 'bg-[#1D9BF0]',
 };
 
 export type NoteSource = 'telegram' | 'desktop';
