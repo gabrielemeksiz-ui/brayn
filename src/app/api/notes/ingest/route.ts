@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
           const cleanedText = rawText
             .replace(/<[^>]+>/g, '')
             .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+            .replace(/\s*(https?:\/\/t\.co\/\S+|pic\.twitter\.com\/\S+)/g, '')
             .trim();
           tweetFullText = cleanedText;
           const words = cleanedText.split(/\s+/);
