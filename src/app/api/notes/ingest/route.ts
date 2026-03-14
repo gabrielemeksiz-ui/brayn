@@ -34,10 +34,33 @@ export async function POST(req: NextRequest) {
 
     const customCategories = dbCategories ?? [];
 
+    // Detect if the note is a Twitter/X URL — fetch tweet text for title
+    const tweetUrlMatch = text.trim().match(/^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i);
+    let tweetTitle: string | null = null;
+    if (tweetUrlMatch) {
+      try {
+        const cleanUrl = text.trim().split('?')[0];
+        const oembedRes = await fetch(
+          `https://publish.twitter.com/oembed?url=${encodeURIComponent(cleanUrl)}&dnt=true&omit_script=true`
+        );
+        if (oembedRes.ok) {
+          const oembedData = await oembedRes.json();
+          const pMatch = oembedData.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
+          const rawText = pMatch?.[1] ?? '';
+          tweetTitle = rawText
+            .replace(/<[^>]+>/g, '')
+            .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+            .trim();
+        }
+      } catch {
+        // Ignore — title will fall back to URL
+      }
+    }
+
     // 3. Lancer classification + réécriture en parallèle
     const [classifyResult, rewriteResult] = await Promise.allSettled([
-      classifyNote(text, customCategories),
-      rewriteNote(text),
+      classifyNote(tweetTitle ?? text, customCategories),
+      tweetTitle ? Promise.resolve({ clean_original_language: tweetTitle }) : rewriteNote(text),
     ]);
 
     if (classifyResult.status === "rejected") {
