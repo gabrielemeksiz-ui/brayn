@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     // Detect if the note is a Twitter/X URL — fetch tweet text for title
     const tweetUrlMatch = text.trim().match(/^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i);
     let tweetTitle: string | null = null;
+    let tweetFullText: string | null = null;
     if (tweetUrlMatch) {
       try {
         const cleanUrl = text.trim().split('?')[0];
@@ -47,12 +48,12 @@ export async function POST(req: NextRequest) {
           const oembedData = await oembedRes.json();
           const pMatch = oembedData.html?.match(/<p[^>]*>([\s\S]*?)<\/p>/);
           const rawText = pMatch?.[1] ?? '';
-          const fullText = rawText
+          tweetFullText = rawText
             .replace(/<[^>]+>/g, '')
             .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
             .trim();
-          const words = fullText.split(/\s+/);
-          tweetTitle = words.length > 15 ? words.slice(0, 15).join(' ') + '…' : fullText;
+          const words = tweetFullText.split(/\s+/);
+          tweetTitle = words.length > 15 ? words.slice(0, 15).join(' ') + '…' : tweetFullText;
         }
       } catch {
         // Ignore — title will fall back to URL
@@ -62,7 +63,9 @@ export async function POST(req: NextRequest) {
     // 3. Lancer classification + réécriture en parallèle
     const [classifyResult, rewriteResult] = await Promise.allSettled([
       classifyNote(tweetTitle ?? text, customCategories),
-      tweetTitle ? Promise.resolve({ clean_original_language: tweetTitle }) : rewriteNote(text),
+      tweetTitle
+        ? Promise.resolve({ clean_original_language: tweetTitle })
+        : rewriteNote(text),
     ]);
 
     if (classifyResult.status === "rejected") {
@@ -81,6 +84,9 @@ export async function POST(req: NextRequest) {
     if (rewriteResult.status === "fulfilled") {
       updates.clean_original_language =
         rewriteResult.value.clean_original_language;
+    }
+    if (tweetFullText) {
+      updates.full_text = tweetFullText;
     }
 
     if (Object.keys(updates).length === 0) {
