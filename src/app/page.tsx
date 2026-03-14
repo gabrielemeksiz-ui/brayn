@@ -40,6 +40,7 @@ export default function BraynPage() {
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
+  const [tweetText, setTweetText] = useState<string | null>(null);
 
   // Suppression
   const [selectMode, setSelectMode] = useState(false);
@@ -154,6 +155,7 @@ export default function BraynPage() {
     console.log('openNote id =', note.id, 'seen =', note.seen);
 
     setSelected({ ...note, seen: true });
+    setTweetText(null);
     setChatMessages([]);
     setChatInput('');
 
@@ -744,7 +746,7 @@ export default function BraynPage() {
                   return (
                     <div className="mb-6 space-y-3">
                       {tweetUrls.map(url => (
-                        <TweetEmbed key={url} url={url} />
+                        <TweetEmbed key={url} url={url} onData={d => setTweetText(d.text)} />
                       ))}
                     </div>
                   );
@@ -755,6 +757,7 @@ export default function BraynPage() {
                   noteId={selected.id}
                   initialFullText={
                     selected.full_text ??
+                    tweetText ??
                     selected.clean_original_language ?? selected.original_text ?? ''
                   }
                 />
