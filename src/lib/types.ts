@@ -116,6 +116,10 @@ export interface AIRewriteResponse {
   clean_original_language: string;
 }
 
+export interface AISummaryResponse {
+  summary: string;
+}
+
 export interface IngestPayload {
   text: string;
   sentAt?: string;

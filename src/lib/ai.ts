@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { AIClassificationResponse, AIRewriteResponse, NoteCategory } from './types';
+import type { AIClassificationResponse, AIRewriteResponse, AISummaryResponse, NoteCategory } from './types';
 import { ALL_CATEGORIES } from './types';
 
 const client = new OpenAI({
@@ -148,4 +148,43 @@ ${originalText}`,
 
   const text = response.choices[0]?.message?.content ?? '';
   return parseJSON<AIRewriteResponse>(text);
+}
+
+export async function summarizeVideo(
+  transcript: string,
+  title: string
+): Promise<AISummaryResponse> {
+  const truncated = transcript.length > 50000
+    ? transcript.slice(0, 50000) + '\n\n[Transcript tronqué]'
+    : transcript;
+
+  const response = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    max_tokens: 2048,
+    messages: [{
+      role: 'user',
+      content: `Tu es un assistant qui résume des vidéos YouTube pour Brayn, une app de second cerveau.
+Voici la transcription de la vidéo intitulée "${title}".
+
+Génère un résumé structuré en français avec ces sections exactes :
+
+## Points clés
+- (3 à 6 bullet points sur les points principaux)
+
+## Idées principales
+(2-3 paragraphes développant les idées centrales)
+
+## Conclusion
+(1 paragraphe de synthèse)
+
+Réponds UNIQUEMENT avec du JSON valide :
+{"summary": "...le contenu markdown complet..."}
+
+Transcription :
+${truncated}`,
+    }],
+  });
+
+  const text = response.choices[0]?.message?.content ?? '';
+  return parseJSON<AISummaryResponse>(text);
 }

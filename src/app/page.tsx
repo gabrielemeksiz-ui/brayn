@@ -34,6 +34,8 @@ export default function BraynPage() {
   const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory | string>>(new Set());
   const [expandNewSection, setExpandNewSection] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [youtubeSyncing, setYoutubeSyncing] = useState(false);
+  const [youtubeSyncResult, setYoutubeSyncResult] = useState<string | null>(null);
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDesc, setNewCategoryDesc] = useState('');
@@ -242,6 +244,23 @@ export default function BraynPage() {
     }
   };
 
+  const syncYoutube = async () => {
+    setShowActionMenu(false);
+    setYoutubeSyncing(true);
+    setYoutubeSyncResult(null);
+    try {
+      const res = await fetch('/api/youtube/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        const msg = `${data.imported} importée(s), ${data.skipped} ignorée(s)`;
+        setYoutubeSyncResult(msg);
+        if (data.imported > 0) await Promise.all([fetchNotes(), fetchAllNotes()]);
+        setTimeout(() => setYoutubeSyncResult(null), 4000);
+      }
+    } catch { /* fail silently */ }
+    finally { setYoutubeSyncing(false); }
+  };
+
   const saveTitle = async () => {
     if (!selected || !titleValue.trim()) return;
     const newTitle = titleValue.trim();
@@ -349,7 +368,18 @@ export default function BraynPage() {
               >
                 Créer une catégorie
               </button>
+              <button
+                onClick={syncYoutube}
+                disabled={youtubeSyncing}
+                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A] disabled:opacity-40"
+              >
+                {youtubeSyncing ? 'Sync en cours…' : 'Sync YouTube'}
+              </button>
             </div>
+          )}
+
+          {youtubeSyncResult && (
+            <p className="text-[11px] text-[#9B9B9B] px-1 mt-1">{youtubeSyncResult}</p>
           )}
 
           {showNewCategoryForm && (
