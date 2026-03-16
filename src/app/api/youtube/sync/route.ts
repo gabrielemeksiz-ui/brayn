@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer as supabase } from '@/lib/supabase';
-import { summarizeVideo } from '@/lib/ai';
+import { summarizeYouTubeVideo } from '@/lib/ai';
 
 // PRIMARY: Supadata API — works from datacenter IPs (uses residential proxies)
 // Sign up free at supadata.ai, add SUPADATA_API_KEY to Vercel env vars
@@ -77,8 +77,7 @@ export async function POST(_req: NextRequest) {
     let summary: string | null = null;
     if (rawTranscript) {
       try {
-        const result = await summarizeVideo(rawTranscript, title);
-        summary = result.summary;
+        summary = await summarizeYouTubeVideo(rawTranscript, title);
       } catch { /* note créée sans résumé */ }
     }
 
