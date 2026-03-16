@@ -3,30 +3,44 @@ import { supabaseServer as supabase } from '@/lib/supabase';
 import { summarizeVideo } from '@/lib/ai';
 import { YoutubeTranscript } from 'youtube-transcript';
 
-async function fetchTranscriptViaWeb(videoId: string): Promise<string> {
-  const res = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      "X-YouTube-Client-Name": "1",
-      "X-YouTube-Client-Version": "2.20240101.00.00",
-    },
-    body: JSON.stringify({
-      context: { client: { clientName: "WEB", clientVersion: "2.20240101.00.00" } },
-      videoId,
-    }),
-  });
+async function fetchTranscriptViaAndroid(videoId: string): Promise<string> {
+  const res = await fetch(
+    "https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
+        "X-Goog-Api-Key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: "ANDROID",
+            clientVersion: "20.10.38",
+            androidSdkVersion: 34,
+            hl: "fr",
+            gl: "FR",
+          },
+        },
+        videoId,
+      }),
+    }
+  );
   const data = await res.json();
   const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-  if (!tracks?.length) throw new Error("No caption tracks in WEB response");
-  const captionRes = await fetch(tracks[0].baseUrl + "&fmt=json3");
-  const captionData = await captionRes.json();
-  return (captionData?.events ?? [])
-    .filter((e: { segs?: { utf8: string }[] }) => e.segs)
-    .flatMap((e: { segs: { utf8: string }[] }) => e.segs.map((s) => s.utf8))
+  if (!tracks?.length) throw new Error("No caption tracks");
+  const xml = await (await fetch(tracks[0].baseUrl)).text();
+  return [...xml.matchAll(/<text[^>]*>([^<]*)<\/text>/g)]
+    .map((m) =>
+      m[1]
+        .replace(/&amp;/g, "&")
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+    )
     .join(" ")
-    .replace(/\n/g, " ")
     .trim();
 }
 
@@ -86,10 +100,10 @@ export async function POST(_req: NextRequest) {
     }
     if (!rawTranscript) {
       try {
-        rawTranscript = await fetchTranscriptViaWeb(videoId);
-        console.log(`Transcript fetched via WEB fallback for ${videoId}`);
+        rawTranscript = await fetchTranscriptViaAndroid(videoId);
+        console.log(`Transcript fetched via Android+key fallback for ${videoId}`);
       } catch (err) {
-        console.error(`WEB fallback also failed for ${videoId}:`, String(err));
+        console.error(`Android+key fallback also failed for ${videoId}:`, String(err));
       }
     }
 
