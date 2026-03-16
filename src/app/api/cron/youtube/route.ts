@@ -3,6 +3,28 @@ import { supabaseServer as supabase } from "@/lib/supabase";
 import { classifyNote, summarizeYouTubeVideo } from "@/lib/ai";
 import { YoutubeTranscript } from "youtube-transcript";
 
+// Fetch YouTube page with browser headers and extract captionTracks
+async function fetchTranscriptFromPage(videoId: string): Promise<string> {
+  const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cookie": "CONSENT=YES+42",
+    },
+  });
+  const html = await res.text();
+  const match = html.match(/"captionTracks"\s*:\s*(\[[\s\S]*?\])\s*,\s*"audioTracks"/);
+  if (!match) throw new Error("No captionTracks in page HTML");
+  const tracks: Array<{ baseUrl: string; languageCode: string }> = JSON.parse(match[1]);
+  if (!tracks.length) throw new Error("Empty captionTracks");
+  const track =
+    tracks.find((t) => t.languageCode === "fr") ??
+    tracks.find((t) => t.languageCode === "en") ??
+    tracks[0];
+  const xml = await (await fetch(track.baseUrl)).text();
+  return parseXmlTranscript(xml);
+}
+
 function parseXmlTranscript(xml: string): string {
   return [...xml.matchAll(/<text[^>]*>([^<]*)<\/text>/g)]
     .map((m) =>
@@ -182,6 +204,14 @@ async function processVideo(videoId: string, title: string) {
       } catch (err) {
         console.error(`${clientType} InnerTube fallback failed for ${videoId}:`, String(err));
       }
+    }
+  }
+  if (!transcript) {
+    try {
+      transcript = await fetchTranscriptFromPage(videoId);
+      console.log(`Transcript fetched via browser-page fallback for ${videoId}`);
+    } catch (err) {
+      console.error(`Browser-page fallback failed for ${videoId}:`, String(err));
     }
   }
 
