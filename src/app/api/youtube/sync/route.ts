@@ -22,6 +22,8 @@ async function fetchTranscriptViaSupadata(videoId: string): Promise<string> {
   return data.content.map((item) => item.text).join(" ").trim();
 }
 
+export const maxDuration = 60;
+
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const YOUTUBE_PLAYLIST_ID = process.env.YOUTUBE_PLAYLIST_ID;
 
