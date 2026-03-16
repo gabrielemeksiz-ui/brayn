@@ -3,6 +3,8 @@ import { supabaseServer as supabase } from "@/lib/supabase";
 import { classifyNote, summarizeYouTubeVideo } from "@/lib/ai";
 import { YoutubeTranscript } from "youtube-transcript";
 
+export const maxDuration = 300;
+
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/playlistItems";
 
 interface YouTubePlaylistItem {
@@ -63,7 +65,7 @@ async function fetchPlaylistVideos(): Promise<
 }
 
 async function isVideoAlreadyImported(videoId: string): Promise<boolean> {
-  const youtubeUrl = `https://youtube.com/watch?v=${videoId}`;
+  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const { data } = await supabase
     .from("notes")
     .select("id")
@@ -74,7 +76,7 @@ async function isVideoAlreadyImported(videoId: string): Promise<boolean> {
 }
 
 async function processVideo(videoId: string, title: string) {
-  const youtubeUrl = `https://youtube.com/watch?v=${videoId}`;
+  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   // 1. Create the note immediately with title and link
   const { data: note, error: insertError } = await supabase
