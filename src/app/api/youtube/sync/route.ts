@@ -51,8 +51,11 @@ export async function POST(_req: NextRequest) {
       try {
         const segments = await YoutubeTranscript.fetchTranscript(videoId, config);
         rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
+        console.log(`Transcript fetched for ${videoId}: ${segments.length} segments`);
         break;
-      } catch { /* try next */ }
+      } catch (err) {
+        console.error(`Transcript fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+      }
     }
 
     // AI summary (only if we have a real transcript)
@@ -70,10 +73,14 @@ export async function POST(_req: NextRequest) {
         ? rawTranscript.slice(0, 50000)
         : rawTranscript;
 
+      const fullText = rawTranscript
+        ? `🔗 ${videoUrl}\n\n${summary ?? truncatedTranscript}`
+        : `🔗 ${videoUrl}\n\n⚠️ Transcription indisponible pour cette vidéo.`;
+
       await supabase.from('notes').insert({
         original_text: title,
         clean_original_language: summary,
-        full_text: truncatedTranscript || null,
+        full_text: fullText,
         links: [videoUrl],
         categories: ['youtube'],
         source: 'desktop',
