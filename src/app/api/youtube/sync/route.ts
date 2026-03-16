@@ -131,18 +131,43 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript: library first, then ANDROID InnerTube, then IOS InnerTube
+    // Fetch transcript: Edge Function first (Cloudflare IPs), then fallbacks
     let rawTranscript = '';
-    for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
-      try {
-        const segments = await YoutubeTranscript.fetchTranscript(videoId, config);
-        rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
-        console.log(`Transcript fetched for ${videoId}: ${segments.length} segments`);
-        break;
-      } catch (err) {
-        console.error(`Transcript fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+
+    // 1. Edge Function — Cloudflare IPs, not blocked by YouTube like AWS IPs
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brayn.ninja';
+      const res = await fetch(`${appUrl}/api/youtube/transcript?videoId=${videoId}`);
+      if (res.ok) {
+        const data = await res.json() as { transcript?: string; error?: string };
+        if (data.transcript) {
+          rawTranscript = data.transcript;
+          console.log(`Transcript fetched via Edge Function for ${videoId}`);
+        } else {
+          console.error(`Edge Function returned no transcript for ${videoId}:`, data.error);
+        }
+      } else {
+        console.error(`Edge Function HTTP error for ${videoId}: ${res.status}`);
+      }
+    } catch (err) {
+      console.error(`Edge Function failed for ${videoId}:`, String(err));
+    }
+
+    // 2. youtube-transcript library
+    if (!rawTranscript) {
+      for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
+        try {
+          const segments = await YoutubeTranscript.fetchTranscript(videoId, config);
+          rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
+          console.log(`Transcript fetched via library for ${videoId}: ${segments.length} segments`);
+          break;
+        } catch (err) {
+          console.error(`Library fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+        }
       }
     }
+
+    // 3. InnerTube API (ANDROID then IOS)
     if (!rawTranscript) {
       for (const clientType of ["ANDROID", "IOS"] as const) {
         try {
@@ -150,16 +175,18 @@ export async function POST(_req: NextRequest) {
           console.log(`Transcript fetched via ${clientType} InnerTube for ${videoId}`);
           break;
         } catch (err) {
-          console.error(`${clientType} InnerTube fallback failed for ${videoId}:`, String(err));
+          console.error(`${clientType} InnerTube failed for ${videoId}:`, String(err));
         }
       }
     }
+
+    // 4. Direct page fetch
     if (!rawTranscript) {
       try {
         rawTranscript = await fetchTranscriptFromPage(videoId);
-        console.log(`Transcript fetched via browser-page fallback for ${videoId}`);
+        console.log(`Transcript fetched via page scrape for ${videoId}`);
       } catch (err) {
-        console.error(`Browser-page fallback failed for ${videoId}:`, String(err));
+        console.error(`Page scrape failed for ${videoId}:`, String(err));
       }
     }
 
