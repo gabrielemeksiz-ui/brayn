@@ -89,7 +89,7 @@ export const CATEGORY_DOT: Record<NoteCategory, string> = {
   youtube: 'bg-[#FF0000]',
 };
 
-export type NoteSource = 'telegram' | 'desktop';
+export type NoteSource = 'telegram' | 'desktop' | 'youtube';
 
 export interface Note {
     id: string;

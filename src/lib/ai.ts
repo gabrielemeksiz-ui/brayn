@@ -86,6 +86,46 @@ SORTIE JSON STRICT (rien d'autre) :
   return { categories };
 }
 
+export async function summarizeYouTubeVideo(transcript: string, videoTitle: string): Promise<string> {
+  const response = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    max_tokens: 2048,
+    messages: [
+      {
+        role: 'user',
+        content: `Tu es un assistant de prise de notes pour Brayn, une app de second cerveau. On te donne la transcription complète d'une vidéo YouTube.
+
+Ta mission : créer un résumé structuré en français de cette vidéo.
+
+Format EXACT à respecter (pas de JSON, juste du texte formaté) :
+
+### Points clés
+- Point clé 1
+- Point clé 2
+- Point clé 3
+(autant de points que nécessaire pour couvrir les idées principales, entre 3 et 10 points)
+
+### Conclusion
+Une phrase de synthèse qui résume l'essentiel de la vidéo.
+
+Règles :
+- Écris en français, même si la vidéo est en anglais
+- Sois concis mais complet : chaque point clé doit capturer une idée importante
+- Ne mets PAS le titre de la vidéo (il est déjà dans le titre de la note)
+- Ne mets PAS de lien (il est déjà ajouté automatiquement)
+- Commence directement par "### Points clés"
+
+Titre de la vidéo : ${videoTitle}
+
+Transcription :
+${transcript.slice(0, 12000)}`,
+      },
+    ],
+  });
+
+  return response.choices[0]?.message?.content ?? '';
+}
+
 export async function rewriteNote(originalText: string): Promise<AIRewriteResponse> {
   const response = await client.chat.completions.create({
     model: 'llama-3.3-70b-versatile',

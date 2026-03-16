@@ -45,21 +45,24 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript (fallback to description)
+    // Fetch transcript (auto, then fr, then en — no description fallback)
     let rawTranscript = '';
-    try {
-      const segments = await YoutubeTranscript.fetchTranscript(videoId);
-      rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
-    } catch {
-      rawTranscript = description;
+    for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
+      try {
+        const segments = await YoutubeTranscript.fetchTranscript(videoId, config);
+        rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
+        break;
+      } catch { /* try next */ }
     }
 
-    // AI summary
+    // AI summary (only if we have a real transcript)
     let summary: string | null = null;
-    try {
-      const result = await summarizeVideo(rawTranscript, title);
-      summary = result.summary;
-    } catch { /* note créée sans résumé */ }
+    if (rawTranscript) {
+      try {
+        const result = await summarizeVideo(rawTranscript, title);
+        summary = result.summary;
+      } catch { /* note créée sans résumé */ }
+    }
 
     // Insert note
     try {
