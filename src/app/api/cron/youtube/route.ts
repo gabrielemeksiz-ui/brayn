@@ -3,6 +3,34 @@ import { supabaseServer as supabase } from "@/lib/supabase";
 import { classifyNote, summarizeYouTubeVideo } from "@/lib/ai";
 import { YoutubeTranscript } from "youtube-transcript";
 
+// Fallback: InnerTube WEB client (works from datacenter IPs where Android client fails)
+async function fetchTranscriptViaWeb(videoId: string): Promise<string> {
+  const res = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "X-YouTube-Client-Name": "1",
+      "X-YouTube-Client-Version": "2.20240101.00.00",
+    },
+    body: JSON.stringify({
+      context: { client: { clientName: "WEB", clientVersion: "2.20240101.00.00" } },
+      videoId,
+    }),
+  });
+  const data = await res.json();
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks?.length) throw new Error("No caption tracks in WEB response");
+  const captionRes = await fetch(tracks[0].baseUrl + "&fmt=json3");
+  const captionData = await captionRes.json();
+  return (captionData?.events ?? [])
+    .filter((e: { segs?: { utf8: string }[] }) => e.segs)
+    .flatMap((e: { segs: { utf8: string }[] }) => e.segs.map((s) => s.utf8))
+    .join(" ")
+    .replace(/\n/g, " ")
+    .trim();
+}
+
 export const maxDuration = 60;
 
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/playlistItems";
@@ -96,7 +124,7 @@ async function processVideo(videoId: string, title: string) {
     return;
   }
 
-  // 2. Try to get transcript (auto, then fr, then en)
+  // 2. Try to get transcript (library first, then WEB client fallback)
   let transcript = "";
   for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
     try {
@@ -106,6 +134,14 @@ async function processVideo(videoId: string, title: string) {
       break;
     } catch (err) {
       console.error(`Transcript fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+    }
+  }
+  if (!transcript) {
+    try {
+      transcript = await fetchTranscriptViaWeb(videoId);
+      console.log(`Transcript fetched via WEB fallback for ${videoId}`);
+    } catch (err) {
+      console.error(`WEB fallback also failed for ${videoId}:`, String(err));
     }
   }
 

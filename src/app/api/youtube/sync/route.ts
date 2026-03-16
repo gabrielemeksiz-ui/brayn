@@ -3,6 +3,33 @@ import { supabaseServer as supabase } from '@/lib/supabase';
 import { summarizeVideo } from '@/lib/ai';
 import { YoutubeTranscript } from 'youtube-transcript';
 
+async function fetchTranscriptViaWeb(videoId: string): Promise<string> {
+  const res = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "X-YouTube-Client-Name": "1",
+      "X-YouTube-Client-Version": "2.20240101.00.00",
+    },
+    body: JSON.stringify({
+      context: { client: { clientName: "WEB", clientVersion: "2.20240101.00.00" } },
+      videoId,
+    }),
+  });
+  const data = await res.json();
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks?.length) throw new Error("No caption tracks in WEB response");
+  const captionRes = await fetch(tracks[0].baseUrl + "&fmt=json3");
+  const captionData = await captionRes.json();
+  return (captionData?.events ?? [])
+    .filter((e: { segs?: { utf8: string }[] }) => e.segs)
+    .flatMap((e: { segs: { utf8: string }[] }) => e.segs.map((s) => s.utf8))
+    .join(" ")
+    .replace(/\n/g, " ")
+    .trim();
+}
+
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const YOUTUBE_PLAYLIST_ID = process.env.YOUTUBE_PLAYLIST_ID;
 
@@ -45,7 +72,7 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript (auto, then fr, then en — no description fallback)
+    // Fetch transcript (library first, then WEB client fallback)
     let rawTranscript = '';
     for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
       try {
@@ -55,6 +82,14 @@ export async function POST(_req: NextRequest) {
         break;
       } catch (err) {
         console.error(`Transcript fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+      }
+    }
+    if (!rawTranscript) {
+      try {
+        rawTranscript = await fetchTranscriptViaWeb(videoId);
+        console.log(`Transcript fetched via WEB fallback for ${videoId}`);
+      } catch (err) {
+        console.error(`WEB fallback also failed for ${videoId}:`, String(err));
       }
     }
 
