@@ -3,34 +3,7 @@ import { supabaseServer as supabase } from '@/lib/supabase';
 import { summarizeVideo } from '@/lib/ai';
 import { YoutubeTranscript } from 'youtube-transcript';
 
-async function fetchTranscriptViaAndroid(videoId: string): Promise<string> {
-  const res = await fetch(
-    "https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
-        "X-Goog-Api-Key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8",
-      },
-      body: JSON.stringify({
-        context: {
-          client: {
-            clientName: "ANDROID",
-            clientVersion: "20.10.38",
-            androidSdkVersion: 34,
-            hl: "fr",
-            gl: "FR",
-          },
-        },
-        videoId,
-      }),
-    }
-  );
-  const data = await res.json();
-  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-  if (!tracks?.length) throw new Error("No caption tracks");
-  const xml = await (await fetch(tracks[0].baseUrl)).text();
+function parseXmlTranscript(xml: string): string {
   return [...xml.matchAll(/<text[^>]*>([^<]*)<\/text>/g)]
     .map((m) =>
       m[1]
@@ -42,6 +15,57 @@ async function fetchTranscriptViaAndroid(videoId: string): Promise<string> {
     )
     .join(" ")
     .trim();
+}
+
+async function fetchTranscriptViaInnerTube(videoId: string, clientType: "ANDROID" | "IOS"): Promise<string> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) throw new Error("YOUTUBE_API_KEY not set");
+
+  const clientConfig = clientType === "ANDROID"
+    ? {
+        clientName: "ANDROID",
+        clientVersion: "20.10.38",
+        androidSdkVersion: 34,
+        userAgent: "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
+      }
+    : {
+        clientName: "IOS",
+        clientVersion: "19.45.4",
+        deviceMake: "Apple",
+        deviceModel: "iPhone16,2",
+        osName: "iPhone",
+        osVersion: "18.1.0.22B83",
+        userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X)",
+      };
+
+  const { userAgent, ...clientContext } = clientConfig;
+
+  const res = await fetch(
+    `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": userAgent,
+        "X-Goog-Api-Key": apiKey,
+      },
+      body: JSON.stringify({
+        context: {
+          client: {
+            ...clientContext,
+            hl: "fr",
+            gl: "FR",
+          },
+        },
+        videoId,
+      }),
+    }
+  );
+  const data = await res.json();
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks?.length) throw new Error(`No caption tracks (${clientType})`);
+  const xml = await (await fetch(tracks[0].baseUrl)).text();
+  return parseXmlTranscript(xml);
 }
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -86,7 +110,7 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript (library first, then WEB client fallback)
+    // Fetch transcript: library first, then ANDROID InnerTube, then IOS InnerTube
     let rawTranscript = '';
     for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
       try {
@@ -99,11 +123,14 @@ export async function POST(_req: NextRequest) {
       }
     }
     if (!rawTranscript) {
-      try {
-        rawTranscript = await fetchTranscriptViaAndroid(videoId);
-        console.log(`Transcript fetched via Android+key fallback for ${videoId}`);
-      } catch (err) {
-        console.error(`Android+key fallback also failed for ${videoId}:`, String(err));
+      for (const clientType of ["ANDROID", "IOS"] as const) {
+        try {
+          rawTranscript = await fetchTranscriptViaInnerTube(videoId, clientType);
+          console.log(`Transcript fetched via ${clientType} InnerTube for ${videoId}`);
+          break;
+        } catch (err) {
+          console.error(`${clientType} InnerTube fallback failed for ${videoId}:`, String(err));
+        }
       }
     }
 
