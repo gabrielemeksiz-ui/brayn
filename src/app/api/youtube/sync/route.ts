@@ -1,41 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer as supabase } from '@/lib/supabase';
-import { summarizeYouTubeVideo } from '@/lib/ai';
-
-// PRIMARY: Supadata API — works from datacenter IPs (uses residential proxies)
-// Sign up free at supadata.ai, add SUPADATA_API_KEY to Vercel env vars
-async function fetchTranscriptViaSupadata(videoId: string): Promise<string> {
-  const apiKey = process.env.SUPADATA_API_KEY;
-  if (!apiKey) throw new Error("SUPADATA_API_KEY not set");
-
-  const res = await fetch(
-    `https://api.supadata.ai/v1/transcript?url=https://youtu.be/${videoId}`,
-    { headers: { "x-api-key": apiKey } }
-  );
-
-  if (!res.ok) throw new Error(`Supadata error ${res.status}: ${await res.text()}`);
-
-  const data = await res.json() as { content: Array<{ text: string }> | string; lang?: string };
-
-  if (typeof data.content === "string") return data.content;
-  if (!Array.isArray(data.content) || !data.content.length) throw new Error("Supadata returned empty content");
-  return data.content.map((item) => item.text).join(" ").trim();
-}
+import { classifyNote, summarizeYouTubeVideo } from '@/lib/ai';
+import { fetchTranscriptViaSupadata } from '@/lib/youtube';
 
 export const maxDuration = 60;
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const YOUTUBE_PLAYLIST_ID = process.env.YOUTUBE_PLAYLIST_ID;
-
 export async function POST(_req: NextRequest) {
-  if (!YOUTUBE_API_KEY || !YOUTUBE_PLAYLIST_ID) {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  const playlistId = process.env.YOUTUBE_PLAYLIST_ID;
+
+  if (!apiKey || !playlistId) {
     return NextResponse.json(
       { error: 'Missing YOUTUBE_API_KEY or YOUTUBE_PLAYLIST_ID' },
       { status: 500 }
     );
   }
 
-  const playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${YOUTUBE_PLAYLIST_ID}&maxResults=50&key=${YOUTUBE_API_KEY}`;
+  const playlistUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`;
   const playlistRes = await fetch(playlistUrl);
   if (!playlistRes.ok) {
     return NextResponse.json({ error: 'YouTube API request failed' }, { status: 502 });
@@ -51,13 +32,12 @@ export async function POST(_req: NextRequest) {
     const resourceId = snippet?.resourceId as Record<string, string> | undefined;
     const videoId: string = resourceId?.videoId ?? '';
     const title: string = (snippet?.title as string) ?? 'Sans titre';
-    const description: string = (snippet?.description as string) ?? '';
 
     if (!videoId) { errors++; continue; }
 
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-    // Duplicate check via links array
+    // Duplicate check
     const { data: existing } = await supabase
       .from('notes')
       .select('id')
@@ -75,22 +55,41 @@ export async function POST(_req: NextRequest) {
       console.error(`Supadata failed for ${videoId}:`, String(err));
     }
 
-    // AI summary (only if we have a real transcript)
+    // AI summary
     let summary: string | null = null;
     if (rawTranscript) {
       try {
         summary = await summarizeYouTubeVideo(rawTranscript, title);
-      } catch { /* note créée sans résumé */ }
+      } catch (err) {
+        console.error(`Summary failed for ${videoId}:`, String(err));
+      }
+    }
+
+    // AI classification
+    let categories = ['youtube'];
+    try {
+      const { data: dbCategories } = await supabase
+        .from('categories')
+        .select('id, label, description')
+        .eq('is_builtin', false)
+        .eq('hidden', false);
+
+      const classifyResult = await classifyNote(
+        rawTranscript ? `${title}\n\n${rawTranscript.slice(0, 2000)}` : title,
+        dbCategories ?? []
+      );
+
+      const cats = classifyResult.categories as string[];
+      if (!cats.includes('youtube')) cats.unshift('youtube');
+      categories = cats;
+    } catch (err) {
+      console.error(`Classification failed for ${videoId}:`, String(err));
     }
 
     // Insert note
     try {
-      const truncatedTranscript = rawTranscript.length > 50000
-        ? rawTranscript.slice(0, 50000)
-        : rawTranscript;
-
       const fullText = rawTranscript
-        ? `🔗 ${videoUrl}\n\n${summary ?? truncatedTranscript}`
+        ? `🔗 ${videoUrl}\n\n${summary ?? rawTranscript.slice(0, 12000)}`
         : `🔗 ${videoUrl}\n\n⚠️ Transcription indisponible pour cette vidéo.`;
 
       await supabase.from('notes').insert({
@@ -98,8 +97,8 @@ export async function POST(_req: NextRequest) {
         clean_original_language: summary,
         full_text: fullText,
         links: [videoUrl],
-        categories: ['youtube'],
-        source: 'desktop',
+        categories,
+        source: 'youtube',
         seen: false,
       });
       imported++;
