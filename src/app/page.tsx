@@ -14,6 +14,10 @@ function extractTweetUrls(links: string[], originalText: string): string[] {
   return [...originalText.matchAll(tweetRegex)].map(m => m[0]);
 }
 
+function extractYoutubeUrls(links: string[] | null): string[] {
+  return (links ?? []).filter(l => /https?:\/\/(www\.)?youtube\.com\/watch\?v=/.test(l));
+}
+
 function noteTitle(note: { links: string[] | null; original_text: string | null; clean_original_language?: string | null }): string {
   const isTweet = extractTweetUrls(note.links ?? [], note.original_text ?? '').length > 0;
   if (isTweet) return note.clean_original_language ?? note.original_text ?? '';
@@ -788,13 +792,40 @@ export default function BraynPage() {
                   );
                 })()}
 
+                {/* YouTube Link */}
+                {(() => {
+                  const youtubeUrls = extractYoutubeUrls(selected.links);
+                  if (youtubeUrls.length === 0) return null;
+                  return (
+                    <div className="mb-4 flex flex-col gap-1">
+                      {youtubeUrls.map(url => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[13px] text-[#2E7CD1] hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      ))}
+                    </div>
+                  );
+                })()}
+
                 {/* Editor */}
                 <NoteEditor
                   noteId={selected.id}
                   initialFullText={(() => {
                     const isTweet = extractTweetUrls(selected.links, selected.original_text).length > 0;
                     if (isTweet) return tweetText ?? selected.full_text ?? '';
-                    return selected.full_text ?? selected.clean_original_language ?? selected.original_text ?? '';
+                    const youtubeUrls = extractYoutubeUrls(selected.links);
+                    const fullText = selected.full_text ?? selected.clean_original_language ?? selected.original_text ?? '';
+                    if (youtubeUrls.length > 0) {
+                      // Strip the leading "🔗 <url>\n\n" line so it's not duplicated
+                      return fullText.replace(/^🔗 https?:\/\/[^\n]+\n\n/, '');
+                    }
+                    return fullText;
                   })()}
                 />
               </div>
