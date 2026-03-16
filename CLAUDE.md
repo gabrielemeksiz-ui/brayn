@@ -30,10 +30,10 @@ src/
       youtube/sync/route.ts     # Sync manuelle YouTube
       cron/youtube/route.ts     # Cron horaire : import playlist YouTube
   components/
-    NoteEditor.tsx              # Textarea auto-grow avec auto-save (2s)
+    NoteEditor.tsx              # Textarea auto-grow avec auto-save (2s) + lien YouTube cliquable
     TweetEmbed.tsx              # Affichage embed tweet
   lib/
-    ai.ts                       # Fonctions IA : classifyNote, rewriteNote, summarizeVideo
+    ai.ts                       # Fonctions IA : classifyNote, rewriteNote, summarizeYouTubeVideo, summarizeVideo
     supabase.ts                 # Client Supabase server-side (service role)
     types.ts                    # Types, catégories, couleurs, labels
     utils.ts                    # extractLinks, formatDate
@@ -92,14 +92,16 @@ Chaque catégorie a : label FR, couleurs (bg/text/border), outline, dot sidebar.
 
 ## YouTube Auto-Sync
 
-- **Cron** : `GET /api/cron/youtube` toutes les heures (Vercel Cron, `vercel.json`)
-- **Sync manuelle** : `POST /api/youtube/sync`
-- Récupère les vidéos d'une playlist YouTube
+- **Cron** : `GET /api/cron/youtube` tous les jours à 9h (Vercel Cron Hobby, `vercel.json`)
+- **Sync manuelle** : `POST /api/youtube/sync` (depuis la console : `fetch('/api/youtube/sync',{method:'POST'}).then(r=>r.json()).then(console.log)`)
+- Récupère les vidéos d'une playlist YouTube (YouTube Data API v3)
 - Skip les doublons (vérifie `links` en base)
-- Récupère la transcription (`youtube-transcript`)
-- Résumé IA structuré (points clés + idées principales + conclusion)
+- Récupère la transcription via **Supadata API** (`SUPADATA_API_KEY`) — nécessaire car YouTube bloque les IPs datacenter (AWS/Cloudflare) pour les transcriptions
+- Résumé IA structuré avec `summarizeYouTubeVideo` (points clés + conclusion, texte direct sans JSON)
 - Classification IA automatique + auto-tag `youtube`
-- Si pas de transcription → note créée avec titre + lien seulement
+- Si pas de transcription (Supadata retourne 202) → note créée avec titre + lien + message d'indisponibilité
+- **Limite** : max 3 vidéos/run pour le cron (timeout 60s), toutes les vidéos pour la sync manuelle
+- **Important** : `maxDuration = 60` requis sur les deux routes sinon timeout à 10s
 
 ## Auth
 
@@ -122,6 +124,7 @@ Chaque catégorie a : label FR, couleurs (bg/text/border), outline, dot sidebar.
 | CRON_SECRET | Sécurité cron Vercel |
 | APP_PASSWORD | Mot de passe de connexion |
 | NEXT_PUBLIC_APP_URL | URL de l'app |
+| SUPADATA_API_KEY | API Supadata pour transcriptions YouTube (bypass IP datacenter) |
 
 ## Commandes
 
@@ -135,7 +138,7 @@ npm run lint     # ESLint
 
 - **Langue UI** : Français
 - **Thème** : Dark (bg-[#191919], text-[#D4D4D4])
-- **IA** : Groq avec llama-3.3-70b-versatile, réponses en JSON parsé
+- **IA** : Groq avec llama-3.3-70b-versatile — `summarizeYouTubeVideo` retourne du texte direct (pas JSON), `classifyNote`/`rewriteNote` retournent du JSON parsé
 - **API** : Next.js Route Handlers, pas de contrôleurs séparés
 - **État** : useState React, pas de state manager externe
 - **Polling** : Toutes les 15s pour les nouvelles notes Telegram
