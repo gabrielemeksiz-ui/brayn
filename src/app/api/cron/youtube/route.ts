@@ -3,7 +3,7 @@ import { supabaseServer as supabase } from "@/lib/supabase";
 import { classifyNote, summarizeYouTubeVideo } from "@/lib/ai";
 import { YoutubeTranscript } from "youtube-transcript";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/playlistItems";
 
@@ -180,9 +180,11 @@ export async function GET(req: NextRequest) {
 
     let imported = 0;
     let skipped = 0;
+    const MAX_PER_RUN = 3;
 
-    // 2. Process each video
+    // 2. Process each video (max 3 per run to stay within 60s timeout)
     for (const video of videos) {
+      if (imported >= MAX_PER_RUN) break;
       const alreadyImported = await isVideoAlreadyImported(video.videoId);
 
       if (alreadyImported) {
