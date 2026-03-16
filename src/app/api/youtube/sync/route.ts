@@ -1,92 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer as supabase } from '@/lib/supabase';
 import { summarizeVideo } from '@/lib/ai';
-import { YoutubeTranscript } from 'youtube-transcript';
 
-async function fetchTranscriptFromPage(videoId: string): Promise<string> {
-  const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-      "Cookie": "CONSENT=YES+42",
-    },
-  });
-  const html = await res.text();
-  const match = html.match(/"captionTracks"\s*:\s*(\[[\s\S]*?\])\s*,\s*"audioTracks"/);
-  if (!match) throw new Error("No captionTracks in page HTML");
-  const tracks: Array<{ baseUrl: string; languageCode: string }> = JSON.parse(match[1]);
-  if (!tracks.length) throw new Error("Empty captionTracks");
-  const track =
-    tracks.find((t) => t.languageCode === "fr") ??
-    tracks.find((t) => t.languageCode === "en") ??
-    tracks[0];
-  const xml = await (await fetch(track.baseUrl)).text();
-  return parseXmlTranscript(xml);
-}
-
-function parseXmlTranscript(xml: string): string {
-  return [...xml.matchAll(/<text[^>]*>([^<]*)<\/text>/g)]
-    .map((m) =>
-      m[1]
-        .replace(/&amp;/g, "&")
-        .replace(/&#39;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-    )
-    .join(" ")
-    .trim();
-}
-
-async function fetchTranscriptViaInnerTube(videoId: string, clientType: "ANDROID" | "IOS"): Promise<string> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) throw new Error("YOUTUBE_API_KEY not set");
-
-  const clientConfig = clientType === "ANDROID"
-    ? {
-        clientName: "ANDROID",
-        clientVersion: "20.10.38",
-        androidSdkVersion: 34,
-        userAgent: "com.google.android.youtube/20.10.38 (Linux; U; Android 14)",
-      }
-    : {
-        clientName: "IOS",
-        clientVersion: "19.45.4",
-        deviceMake: "Apple",
-        deviceModel: "iPhone16,2",
-        osName: "iPhone",
-        osVersion: "18.1.0.22B83",
-        userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X)",
-      };
-
-  const { userAgent, ...clientContext } = clientConfig;
+// PRIMARY: Supadata API — works from datacenter IPs (uses residential proxies)
+// Sign up free at supadata.ai, add SUPADATA_API_KEY to Vercel env vars
+async function fetchTranscriptViaSupadata(videoId: string): Promise<string> {
+  const apiKey = process.env.SUPADATA_API_KEY;
+  if (!apiKey) throw new Error("SUPADATA_API_KEY not set");
 
   const res = await fetch(
-    `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": userAgent,
-        "X-Goog-Api-Key": apiKey,
-      },
-      body: JSON.stringify({
-        context: {
-          client: {
-            ...clientContext,
-            hl: "fr",
-            gl: "FR",
-          },
-        },
-        videoId,
-      }),
-    }
+    `https://api.supadata.ai/v1/transcript?url=https://youtu.be/${videoId}`,
+    { headers: { "x-api-key": apiKey } }
   );
-  const data = await res.json();
-  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-  if (!tracks?.length) throw new Error(`No caption tracks (${clientType})`);
-  const xml = await (await fetch(tracks[0].baseUrl)).text();
-  return parseXmlTranscript(xml);
+
+  if (!res.ok) throw new Error(`Supadata error ${res.status}: ${await res.text()}`);
+
+  const data = await res.json() as { content: Array<{ text: string }> | string; lang?: string };
+
+  if (typeof data.content === "string") return data.content;
+  if (!Array.isArray(data.content) || !data.content.length) throw new Error("Supadata returned empty content");
+  return data.content.map((item) => item.text).join(" ").trim();
 }
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -131,71 +64,13 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript: Edge Function first (Cloudflare IPs), then fallbacks
+    // Fetch transcript via Supadata (works from datacenter IPs)
     let rawTranscript = '';
-
-    // 1. Edge Function — Cloudflare IPs, not blocked by YouTube like AWS IPs
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.brayn.ninja';
-      const res = await fetch(`${appUrl}/api/youtube/transcript?videoId=${videoId}`);
-      if (res.ok) {
-        const data = await res.json() as { transcript?: string; error?: string };
-        if (data.transcript) {
-          rawTranscript = data.transcript;
-          console.log(`Transcript fetched via Edge Function for ${videoId}`);
-        } else {
-          console.error(`Edge Function returned no transcript for ${videoId}:`, data.error);
-        }
-      } else {
-        console.error(`Edge Function HTTP error for ${videoId}: ${res.status}`);
-      }
+      rawTranscript = await fetchTranscriptViaSupadata(videoId);
+      console.log(`Transcript fetched via Supadata for ${videoId} (${rawTranscript.length} chars)`);
     } catch (err) {
-      console.error(`Edge Function failed for ${videoId}:`, String(err));
-    }
-
-    // 2. youtube-transcript library
-    if (!rawTranscript) {
-      for (const config of [undefined, { lang: 'fr' }, { lang: 'en' }]) {
-        try {
-          const segments = await YoutubeTranscript.fetchTranscript(videoId, config);
-          rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
-          console.log(`Transcript fetched via library for ${videoId}: ${segments.length} segments`);
-          break;
-        } catch (err) {
-          console.error(`Library fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
-        }
-      }
-    }
-
-    // 3. InnerTube API (ANDROID then IOS)
-    if (!rawTranscript) {
-      for (const clientType of ["ANDROID", "IOS"] as const) {
-        try {
-          rawTranscript = await fetchTranscriptViaInnerTube(videoId, clientType);
-          console.log(`Transcript fetched via ${clientType} InnerTube for ${videoId}`);
-          break;
-        } catch (err) {
-          console.error(`${clientType} InnerTube failed for ${videoId}:`, String(err));
-        }
-      }
-    }
-    if (!rawTranscript) {
-      try {
-        rawTranscript = await fetchTranscriptFromPage(videoId);
-        console.log(`Transcript fetched via browser-page fallback for ${videoId}`);
-      } catch (err) {
-        console.error(`Browser-page fallback failed for ${videoId}:`, String(err));
-      }
-    }
-
-    // 4. Direct page fetch
-    if (!rawTranscript) {
-      try {
-        rawTranscript = await fetchTranscriptFromPage(videoId);
-        console.log(`Transcript fetched via page scrape for ${videoId}`);
-      } catch (err) {
-        console.error(`Page scrape failed for ${videoId}:`, String(err));
-      }
+      console.error(`Supadata failed for ${videoId}:`, String(err));
     }
 
     // AI summary (only if we have a real transcript)
