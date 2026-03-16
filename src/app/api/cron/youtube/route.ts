@@ -96,10 +96,10 @@ async function processVideo(videoId: string, title: string) {
     return;
   }
 
-  // 2. Try to get transcript
+  // 2. Try to get transcript (fr first, then en)
   let transcript = "";
   try {
-    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, [{ lang: 'fr' }, { lang: 'en' }]);
     transcript = transcriptItems.map((item) => item.text).join(" ");
   } catch {
     console.log(`No transcript available for video ${videoId}`);

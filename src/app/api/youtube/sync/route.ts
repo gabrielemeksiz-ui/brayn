@@ -45,21 +45,21 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript (fallback to description)
+    // Fetch transcript (try fr then en, no description fallback)
     let rawTranscript = '';
     try {
-      const segments = await YoutubeTranscript.fetchTranscript(videoId);
+      const segments = await YoutubeTranscript.fetchTranscript(videoId, [{ lang: 'fr' }, { lang: 'en' }]);
       rawTranscript = segments.map((s: { text: string }) => s.text).join(' ');
-    } catch {
-      rawTranscript = description;
-    }
+    } catch { /* no transcript available */ }
 
-    // AI summary
+    // AI summary (only if we have a real transcript)
     let summary: string | null = null;
-    try {
-      const result = await summarizeVideo(rawTranscript, title);
-      summary = result.summary;
-    } catch { /* note créée sans résumé */ }
+    if (rawTranscript) {
+      try {
+        const result = await summarizeVideo(rawTranscript, title);
+        summary = result.summary;
+      } catch { /* note créée sans résumé */ }
+    }
 
     // Insert note
     try {
