@@ -102,10 +102,12 @@ async function processVideo(videoId: string, title: string) {
     try {
       const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, config);
       transcript = transcriptItems.map((item) => item.text).join(" ");
+      console.log(`Transcript fetched for ${videoId}: ${transcriptItems.length} segments`);
       break;
-    } catch { /* try next */ }
+    } catch (err) {
+      console.error(`Transcript fetch failed for ${videoId} (lang=${JSON.stringify(config)}):`, String(err));
+    }
   }
-  if (!transcript) console.log(`No transcript available for video ${videoId}`);
 
   // 3. Build note content
   const updates: Record<string, unknown> = {};
