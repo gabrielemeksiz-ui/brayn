@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -16,19 +16,22 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const supabase = getSupabaseBrowserClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, inviteCode }),
     });
 
-    if (authError) {
-      setError("Email ou mot de passe incorrect");
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Erreur lors de l'inscription");
       setLoading(false);
-    } else {
-      router.push("/");
-      router.refresh();
+      return;
     }
+
+    // Redirect to login after successful signup
+    router.push("/login");
   }
 
   return (
@@ -40,7 +43,7 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <div className="text-3xl mb-3">🧠</div>
           <h1 className="text-[18px] font-medium text-[#D4D4D4] mb-1">Brayn</h1>
-          <p className="text-[13px] text-[#9B9B9B]">Connectez-vous pour accéder</p>
+          <p className="text-[13px] text-[#9B9B9B]">Créer un compte avec un code d'invitation</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -61,21 +64,29 @@ export default function LoginPage() {
             className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
           />
 
+          <input
+            type="text"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            placeholder="Code d'invitation"
+            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
+          />
+
           {error && <p className="text-red-400 text-[13px] text-center">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading || !email || !password}
+            disabled={loading || !email || !password || !inviteCode}
             className="w-full bg-[#2E7CD1] hover:bg-[#2568B8] text-white font-medium rounded-[4px] py-2.5 text-[14px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? "Création..." : "Créer un compte"}
           </button>
         </form>
 
         <p className="text-center text-[13px] text-[#606060] mt-4">
-          Pas de compte ?{" "}
-          <a href="/signup" className="text-[#2E7CD1] hover:underline">
-            S'inscrire
+          Déjà un compte ?{" "}
+          <a href="/login" className="text-[#2E7CD1] hover:underline">
+            Se connecter
           </a>
         </p>
       </div>

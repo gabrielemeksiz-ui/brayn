@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { useUser } from '@/lib/hooks/useUser';
 import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
@@ -27,6 +30,8 @@ function noteTitle(note: { links: string[] | null; original_text: string | null;
 type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
 export default function BraynPage() {
+  const router = useRouter();
+  const { isAdmin } = useUser();
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState<Note | null>(null);
   const [section, setSection] = useState<Section>('new');
@@ -248,6 +253,12 @@ export default function BraynPage() {
     }
   };
 
+  const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   const syncYoutube = async () => {
     setShowActionMenu(false);
     setYoutubeSyncing(true);
@@ -372,13 +383,15 @@ export default function BraynPage() {
               >
                 Créer une catégorie
               </button>
-              <button
-                onClick={syncYoutube}
-                disabled={youtubeSyncing}
-                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A] disabled:opacity-40"
-              >
-                {youtubeSyncing ? 'Sync en cours…' : 'Sync YouTube'}
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={syncYoutube}
+                  disabled={youtubeSyncing}
+                  className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A] disabled:opacity-40"
+                >
+                  {youtubeSyncing ? 'Sync en cours…' : 'Sync YouTube'}
+                </button>
+              )}
             </div>
           )}
 
@@ -627,6 +640,21 @@ export default function BraynPage() {
             </div>
           );
         })}
+        {/* Sidebar footer */}
+        <div className="mt-auto px-3 py-3 border-t border-[#2A2A2A] flex items-center gap-2">
+          <a
+            href="/settings"
+            className="flex-1 text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+          >
+            Paramètres
+          </a>
+          <button
+            onClick={handleLogout}
+            className="px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+          >
+            Déconnexion
+          </button>
+        </div>
       </aside>
 
       {/* Zone principale */}

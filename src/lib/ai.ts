@@ -2,10 +2,16 @@ import OpenAI from 'openai';
 import type { AIClassificationResponse, AIRewriteResponse, NoteCategory } from './types';
 import { ALL_CATEGORIES } from './types';
 
-const client = new OpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-});
+let client: OpenAI | null = null;
+function getClient(): OpenAI {
+  if (!client) {
+    client = new OpenAI({
+      baseURL: 'https://api.groq.com/openai/v1',
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+  return client;
+}
 
 function parseJSON<T>(text: string): T {
   const cleaned = text.replace(/```json|```/g, '').trim();
@@ -23,7 +29,7 @@ export async function classifyNote(
 
   const allCategoryIds = [...ALL_CATEGORIES, ...customCategories.map(c => c.id)];
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 256,
     messages: [
@@ -87,7 +93,7 @@ SORTIE JSON STRICT (rien d'autre) :
 }
 
 export async function summarizeYouTubeVideo(transcript: string, videoTitle: string): Promise<string> {
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 2048,
     messages: [
@@ -127,7 +133,7 @@ ${transcript.slice(0, 12000)}`,
 }
 
 export async function rewriteNote(originalText: string): Promise<AIRewriteResponse> {
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
     messages: [

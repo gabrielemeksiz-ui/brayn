@@ -105,7 +105,14 @@ export interface Note {
     clean_other_language: string | null;
     content_json?: any; // <-- pour BlockNote
     full_text?: string | null;
+    user_id?: string;
   }
+
+export interface UserProfile {
+  user_id: string;
+  is_admin: boolean;
+  created_at: string;
+}
   
 
 export interface AIClassificationResponse {
