@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer as supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 import { classifyNote, summarizeYouTubeVideo } from "@/lib/ai";
 import { fetchTranscriptViaSupadata } from "@/lib/youtube";
 
@@ -65,6 +65,7 @@ async function fetchPlaylistVideos(): Promise<
 }
 
 async function isVideoAlreadyImported(videoId: string): Promise<boolean> {
+  const supabase = getSupabaseServiceClient();
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const { data } = await supabase
     .from("notes")
@@ -75,7 +76,8 @@ async function isVideoAlreadyImported(videoId: string): Promise<boolean> {
   return (data?.length ?? 0) > 0;
 }
 
-async function processVideo(videoId: string, title: string) {
+async function processVideo(videoId: string, title: string, userId: string) {
+  const supabase = getSupabaseServiceClient();
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   // 1. Create the note immediately with title and link
@@ -87,6 +89,7 @@ async function processVideo(videoId: string, title: string) {
       seen: false,
       links: [youtubeUrl],
       categories: ["youtube"],
+      user_id: userId,
     })
     .select()
     .single();
@@ -170,7 +173,22 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const supabase = getSupabaseServiceClient();
     console.log("YouTube sync started...");
+
+    // 0. Trouver l'admin pour associer les notes
+    const { data: adminProfile } = await supabase
+      .from("user_profiles")
+      .select("user_id")
+      .eq("is_admin", true)
+      .limit(1)
+      .single();
+
+    if (!adminProfile) {
+      return NextResponse.json({ error: "No admin user found" }, { status: 500 });
+    }
+
+    const adminUserId = adminProfile.user_id;
 
     // 1. Fetch all videos from the playlist
     const videos = await fetchPlaylistVideos();
@@ -190,7 +208,7 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      await processVideo(video.videoId, video.title);
+      await processVideo(video.videoId, video.title, adminUserId);
       imported++;
     }
 

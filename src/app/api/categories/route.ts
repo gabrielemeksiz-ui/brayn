@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer as supabase } from '@/lib/supabase';
+import { getSupabaseUserClient } from '@/lib/supabase';
 
 export async function GET() {
+  const supabase = await getSupabaseUserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -13,6 +17,10 @@ export async function GET() {
 
 // Upsert — used for custom creates AND built-in overrides (label/description/hidden)
 export async function POST(req: NextRequest) {
+  const supabase = await getSupabaseUserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const body = await req.json();
   const { id, label, description = '', is_builtin = false, hidden = false } = body;
 
@@ -20,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('categories')
-    .upsert({ id, label, description, is_builtin, hidden })
+    .upsert({ id, label, description, is_builtin, hidden, user_id: user.id })
     .select()
     .single();
 

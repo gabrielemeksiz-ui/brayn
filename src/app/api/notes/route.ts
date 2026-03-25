@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer as supabase } from "@/lib/supabase";
+import { getSupabaseUserClient } from "@/lib/supabase";
 
 // POST /api/notes — création directe sans IA
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await getSupabaseUserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const body = await req.json().catch(() => ({}));
     const title = (body?.title as string | undefined) ?? "Nouvelle note";
     const source = (body?.source as string | undefined) ?? "desktop";
@@ -16,6 +20,7 @@ export async function POST(req: NextRequest) {
         source,
         seen: false,
         categories: [],
+        user_id: user.id,
       })
       .select()
       .single();
@@ -33,6 +38,10 @@ export async function POST(req: NextRequest) {
 // GET /api/notes
 export async function GET(req: NextRequest) {
   try {
+    const supabase = await getSupabaseUserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { searchParams } = new URL(req.url);
 
     const seenParam = searchParams.get("seen");

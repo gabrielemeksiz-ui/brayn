@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer as supabase } from "@/lib/supabase";
+import { getSupabaseServiceClient } from "@/lib/supabase";
 import { classifyNote, rewriteNote } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseServiceClient();
     const body = await req.json();
 
     const text = body?.text as string | undefined;
     const source = (body?.source as string | undefined) ?? "telegram";
+    const userId = body?.user_id as string | undefined;
 
     if (!text || !text.trim()) {
       return NextResponse.json({ error: "Missing text" }, { status: 400 });
     }
 
+    if (!userId) {
+      return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+    }
+
     // 1. Insérer d'abord — le texte brut est toujours préservé même si l'IA échoue
     const { data, error } = await supabase
       .from("notes")
-      .insert({ original_text: text, source, seen: false })
+      .insert({ original_text: text, source, seen: false, user_id: userId })
       .select()
       .single();
 
@@ -29,6 +35,7 @@ export async function POST(req: NextRequest) {
     const { data: dbCategories } = await supabase
       .from("categories")
       .select("id, label, description")
+      .eq("user_id", userId)
       .eq("is_builtin", false)
       .eq("hidden", false);
 

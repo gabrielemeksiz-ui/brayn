@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer as supabase } from '@/lib/supabase';
+import { getSupabaseUserClient, getSupabaseServiceClient } from '@/lib/supabase';
 import { classifyNote, summarizeYouTubeVideo } from '@/lib/ai';
 import { fetchTranscriptViaSupadata } from '@/lib/youtube';
 
 export const maxDuration = 60;
 
 export async function POST(_req: NextRequest) {
+  // Verify the user is an admin
+  const userClient = await getSupabaseUserClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const supabase = getSupabaseServiceClient();
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile?.is_admin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const apiKey = process.env.YOUTUBE_API_KEY;
   const playlistId = process.env.YOUTUBE_PLAYLIST_ID;
 
@@ -46,11 +63,10 @@ export async function POST(_req: NextRequest) {
 
     if (existing && existing.length > 0) { skipped++; continue; }
 
-    // Fetch transcript via Supadata (works from datacenter IPs)
+    // Fetch transcript via Supadata
     let rawTranscript = '';
     try {
       rawTranscript = await fetchTranscriptViaSupadata(videoId);
-      console.log(`Transcript fetched via Supadata for ${videoId} (${rawTranscript.length} chars)`);
     } catch (err) {
       console.error(`Supadata failed for ${videoId}:`, String(err));
     }
@@ -71,6 +87,7 @@ export async function POST(_req: NextRequest) {
       const { data: dbCategories } = await supabase
         .from('categories')
         .select('id, label, description')
+        .eq('user_id', user.id)
         .eq('is_builtin', false)
         .eq('hidden', false);
 
@@ -100,6 +117,7 @@ export async function POST(_req: NextRequest) {
         categories,
         source: 'youtube',
         seen: false,
+        user_id: user.id,
       });
       imported++;
     } catch {

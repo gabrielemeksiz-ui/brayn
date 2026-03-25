@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { supabaseServer as supabase } from '@/lib/supabase';
+import { getSupabaseUserClient } from '@/lib/supabase';
 
-const client = new OpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-});
+let _client: OpenAI | null = null;
+function getClient(): OpenAI {
+  if (!_client) {
+    _client = new OpenAI({
+      baseURL: 'https://api.groq.com/openai/v1',
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+  return _client;
+}
 
 // GET — historique du chat pour une note
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const supabase = await getSupabaseUserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { id } = await params;
 
   const { data, error } = await supabase
@@ -29,6 +39,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const supabase = await getSupabaseUserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { id } = await params;
   const { message } = await req.json();
 
@@ -86,7 +100,7 @@ Réponds de façon concise et pertinente. Utilise la même langue que l'utilisat
   ];
 
   // Appel Groq
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
     messages,
