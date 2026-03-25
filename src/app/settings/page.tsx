@@ -1,65 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-interface TelegramStatus {
-  linked: boolean;
-  chat_id: string | null;
-  linked_at: string | null;
+interface BotStatus {
+  configured: boolean;
+  bot_username: string | null;
 }
-
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? '';
-
-const STEPS = [
-  {
-    n: 1,
-    title: 'Télécharge Telegram',
-    desc: 'Si tu ne l\'as pas encore, télécharge l\'app Telegram sur ton téléphone ou ouvre web.telegram.org.',
-    link: { label: 'Télécharger Telegram', href: 'https://telegram.org/apps' },
-  },
-  {
-    n: 2,
-    title: 'Ouvre le bot Brayn',
-    desc: 'Clique sur le bouton ci-dessous pour ouvrir le bot directement dans Telegram.',
-    link: BOT_USERNAME
-      ? { label: `Ouvrir @${BOT_USERNAME}`, href: `https://t.me/${BOT_USERNAME}` }
-      : null,
-  },
-  {
-    n: 3,
-    title: 'Démarre le bot',
-    desc: 'Dans Telegram, appuie sur le bouton "Démarrer" (ou envoie /start) pour activer le bot.',
-  },
-  {
-    n: 4,
-    title: 'Génère ton code de liaison',
-    desc: 'Clique sur le bouton ci-dessous pour obtenir un code unique valable 10 minutes.',
-  },
-  {
-    n: 5,
-    title: 'Envoie le code au bot',
-    desc: 'Copie la commande générée et envoie-la dans ta conversation avec le bot Telegram.',
-  },
-  {
-    n: 6,
-    title: 'C\'est fait !',
-    desc: 'Le bot va confirmer la liaison. Désormais, tout message envoyé au bot sera sauvegardé dans Brayn.',
-  },
-];
 
 export default function SettingsPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
-  const [linkCode, setLinkCode] = useState<string | null>(null);
-  const [linkCodeExpiry, setLinkCodeExpiry] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [unlinking, setUnlinking] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [botStatus, setBotStatus] = useState<BotStatus | null>(null);
+  const [tokenInput, setTokenInput] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const tokenRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -76,43 +36,43 @@ export default function SettingsPage() {
         setIsAdmin(profile?.is_admin ?? false);
       }
 
-      const res = await fetch('/api/telegram/status');
+      const res = await fetch('/api/telegram/setup-bot');
       const data = await res.json();
-      if (!data.error) setTelegramStatus(data);
+      if (!data.error) setBotStatus(data);
       setLoading(false);
     };
     init();
   }, []);
 
-  const generateCode = async () => {
-    setGenerating(true);
+  const setupBot = async () => {
+    if (!tokenInput.trim()) return;
+    setSaving(true);
+    setSaveError(null);
     try {
-      const res = await fetch('/api/telegram/link-code', { method: 'POST' });
+      const res = await fetch('/api/telegram/setup-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenInput.trim() }),
+      });
       const data = await res.json();
-      if (data.code) {
-        setLinkCode(data.code);
-        setLinkCodeExpiry(data.expires_at);
+      if (data.ok) {
+        setBotStatus({ configured: true, bot_username: data.bot_username });
+        setTokenInput('');
+      } else {
+        setSaveError(data.error ?? 'Erreur inconnue');
       }
     } finally {
-      setGenerating(false);
+      setSaving(false);
     }
   };
 
-  const copyCommand = async () => {
-    if (!linkCode) return;
-    await navigator.clipboard.writeText(`/link ${linkCode}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const unlinkTelegram = async () => {
-    setUnlinking(true);
+  const removeBot = async () => {
+    setRemoving(true);
     try {
-      await fetch('/api/telegram/status', { method: 'DELETE' });
-      setTelegramStatus({ linked: false, chat_id: null, linked_at: null });
-      setLinkCode(null);
+      await fetch('/api/telegram/setup-bot', { method: 'DELETE' });
+      setBotStatus({ configured: false, bot_username: null });
     } finally {
-      setUnlinking(false);
+      setRemoving(false);
     }
   };
 
@@ -121,10 +81,6 @@ export default function SettingsPage() {
     await supabase.auth.signOut();
     router.push('/login');
   };
-
-  const expiryLabel = linkCodeExpiry
-    ? new Date(linkCodeExpiry).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : null;
 
   return (
     <div className="min-h-screen bg-[#191919] text-[#D4D4D4]" style={{ fontFamily: "var(--font-inter, 'Inter', system-ui, sans-serif)" }}>
@@ -145,9 +101,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-[13px] text-[#D4D4D4]">{email ?? '—'}</p>
               <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                isAdmin
-                  ? 'bg-[#2E7CD1]/20 text-[#2E7CD1]'
-                  : 'bg-[#2A2A2A] text-[#9B9B9B]'
+                isAdmin ? 'bg-[#2E7CD1]/20 text-[#2E7CD1]' : 'bg-[#2A2A2A] text-[#9B9B9B]'
               }`}>
                 {isAdmin ? 'Admin' : 'Invité'}
               </span>
@@ -164,146 +118,168 @@ export default function SettingsPage() {
         {/* Telegram */}
         <section className="bg-[#202020] border border-[#2A2A2A] rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-[15px] font-medium">Telegram</h2>
+            <h2 className="text-[15px] font-medium">Bot Telegram</h2>
             {!loading && (
-              <span className={`flex items-center gap-1.5 text-[12px] ${telegramStatus?.linked ? 'text-emerald-400' : 'text-[#606060]'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${telegramStatus?.linked ? 'bg-emerald-400' : 'bg-[#606060]'}`} />
-                {telegramStatus?.linked ? 'Lié' : 'Non lié'}
+              <span className={`flex items-center gap-1.5 text-[12px] ${botStatus?.configured ? 'text-emerald-400' : 'text-[#606060]'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${botStatus?.configured ? 'bg-emerald-400' : 'bg-[#606060]'}`} />
+                {botStatus?.configured ? `@${botStatus.bot_username}` : 'Non configuré'}
               </span>
             )}
           </div>
-          <p className="text-[13px] text-[#9B9B9B] mb-5">
-            Envoie tes notes directement depuis Telegram — elles apparaissent instantanément dans Brayn.
+          <p className="text-[13px] text-[#9B9B9B] mb-6">
+            Crée ton propre bot Telegram personnel — tout ce que tu lui envoies sera sauvegardé dans Brayn.
           </p>
 
           {loading ? (
             <p className="text-[13px] text-[#606060]">Chargement…</p>
-          ) : telegramStatus?.linked ? (
-            /* Déjà lié */
-            <div className="space-y-3">
+          ) : botStatus?.configured ? (
+            /* Bot déjà configuré */
+            <div className="space-y-4">
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[6px] px-4 py-3">
-                <p className="text-[13px] text-emerald-300 font-medium">✓ Compte Telegram lié avec succès</p>
-                {telegramStatus.linked_at && (
-                  <p className="text-[12px] text-[#606060] mt-0.5">
-                    Depuis le {new Date(telegramStatus.linked_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                )}
+                <p className="text-[13px] text-emerald-300 font-medium">✓ Bot configuré et actif</p>
+                <p className="text-[12px] text-[#9B9B9B] mt-0.5">
+                  Ouvre <a href={`https://t.me/${botStatus.bot_username}`} target="_blank" rel="noopener noreferrer" className="text-[#2E7CD1] hover:underline">@{botStatus.bot_username}</a> dans Telegram et envoie n'importe quel message pour créer une note.
+                </p>
               </div>
-              <p className="text-[13px] text-[#9B9B9B]">
-                Tout message envoyé au bot sera automatiquement sauvegardé dans Brayn.
-              </p>
               <button
-                onClick={unlinkTelegram}
-                disabled={unlinking}
+                onClick={removeBot}
+                disabled={removing}
                 className="text-[12px] text-red-400/70 hover:text-red-400 transition-colors duration-100 disabled:opacity-40"
               >
-                {unlinking ? 'Déliaison…' : 'Délier le compte Telegram'}
+                {removing ? 'Suppression…' : 'Supprimer le bot'}
               </button>
             </div>
           ) : (
-            /* Tutoriel étape par étape */
-            <div className="space-y-4">
-              {STEPS.map((step) => {
-                const isStep4 = step.n === 4;
-                const isStep5 = step.n === 5;
-                const isStep6 = step.n === 6;
-                const isStepDone =
-                  (isStep4 && linkCode) ||
-                  (isStep5 && linkCode) ||
-                  isStep6;
-                const isActive =
-                  (step.n === 1) ||
-                  (step.n === 2) ||
-                  (step.n === 3) ||
-                  (isStep4 && !linkCode) ||
-                  (isStep5 && !!linkCode) ||
-                  false;
+            /* Tutoriel */
+            <div className="space-y-5">
 
-                return (
-                  <div
-                    key={step.n}
-                    className={`flex gap-4 ${isStep6 ? 'opacity-40' : ''}`}
+              {/* Étape 1 */}
+              <Step n={1} title="Ouvre BotFather sur Telegram">
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
+                  BotFather est le bot officiel Telegram pour créer des bots. Clique sur le lien ci-dessous — ça ouvre directement la conversation.
+                </p>
+                <a
+                  href="https://t.me/BotFather"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-2 px-3 py-2 bg-[#2E7CD1]/10 border border-[#2E7CD1]/30 rounded-[6px] text-[13px] text-[#2E7CD1] hover:bg-[#2E7CD1]/20 transition-colors duration-100"
+                >
+                  Ouvrir @BotFather →
+                </a>
+                <p className="text-[12px] text-[#606060] mt-2">
+                  Si Telegram n&apos;est pas installé, télécharge-le d&apos;abord sur <a href="https://telegram.org/apps" target="_blank" rel="noopener noreferrer" className="text-[#2E7CD1] hover:underline">telegram.org</a>.
+                </p>
+              </Step>
+
+              {/* Étape 2 */}
+              <Step n={2} title='Envoie la commande "/newbot"'>
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
+                  Dans la conversation avec BotFather, envoie ce message :
+                </p>
+                <CodeBlock value="/newbot" />
+              </Step>
+
+              {/* Étape 3 */}
+              <Step n={3} title="Donne un nom à ton bot">
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
+                  BotFather te demande d&apos;abord un <strong className="text-[#D4D4D4]">nom affiché</strong> (ex: <em>Mon Brayn</em>), puis un <strong className="text-[#D4D4D4]">username</strong> qui doit se terminer par <code className="text-[#D4D4D4] bg-[#252525] px-1 rounded">bot</code> (ex: <em>monbrayn_bot</em>).
+                </p>
+              </Step>
+
+              {/* Étape 4 */}
+              <Step n={4} title="Copie le token">
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
+                  BotFather affiche un message de confirmation avec un <strong className="text-[#D4D4D4]">token</strong> — une longue chaîne de caractères qui ressemble à :
+                </p>
+                <CodeBlock value="1234567890:ABCdefGHIjklMNOpqrSTUVwxyz" dim />
+                <p className="text-[13px] text-[#9B9B9B] mt-2 leading-relaxed">
+                  Appuie longuement dessus pour le copier (ou clique sur le token dans l&apos;app desktop).
+                </p>
+              </Step>
+
+              {/* Étape 5 */}
+              <Step n={5} title="Colle le token ici">
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed mb-3">
+                  Brayn va vérifier le token et configurer le bot automatiquement — tu n&apos;as rien d&apos;autre à faire.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    ref={tokenRef}
+                    type="text"
+                    value={tokenInput}
+                    onChange={e => { setTokenInput(e.target.value); setSaveError(null); }}
+                    placeholder="1234567890:ABCdef…"
+                    className="flex-1 bg-[#252525] border border-[#2A2A2A] focus:border-[#2E7CD1] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none transition-colors duration-100 font-mono"
+                  />
+                  <button
+                    onClick={setupBot}
+                    disabled={saving || !tokenInput.trim()}
+                    className="px-4 py-2 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[13px] rounded-[6px] transition-colors duration-100 disabled:opacity-40 shrink-0"
                   >
-                    {/* Numéro */}
-                    <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 ${
-                      isActive || isStepDone
-                        ? 'bg-[#2E7CD1] text-white'
-                        : 'bg-[#2A2A2A] text-[#606060]'
-                    }`}>
-                      {step.n}
-                    </div>
+                    {saving ? 'Vérification…' : 'Connecter'}
+                  </button>
+                </div>
+                {saveError && (
+                  <p className="text-[12px] text-red-400 mt-2">{saveError}</p>
+                )}
+              </Step>
 
-                    {/* Contenu */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#D4D4D4] mb-1">{step.title}</p>
-                      <p className="text-[13px] text-[#9B9B9B] leading-relaxed">{step.desc}</p>
+              {/* Étape 6 */}
+              <Step n={6} title="Envoie ta première note !" dim>
+                <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
+                  Une fois connecté, ouvre ton bot dans Telegram et envoie n&apos;importe quel message — il apparaîtra instantanément dans Brayn.
+                </p>
+              </Step>
 
-                      {/* Lien externe */}
-                      {step.link && (
-                        <a
-                          href={step.link.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-2 text-[13px] text-[#2E7CD1] hover:underline"
-                        >
-                          {step.link.label} →
-                        </a>
-                      )}
-                      {step.n === 2 && !BOT_USERNAME && (
-                        <p className="mt-2 text-[12px] text-[#606060] italic">
-                          Recherche le bot dans Telegram — demande le nom à l&apos;admin.
-                        </p>
-                      )}
-
-                      {/* Étape 4 — générer le code */}
-                      {isStep4 && !linkCode && (
-                        <button
-                          onClick={generateCode}
-                          disabled={generating}
-                          className="mt-3 px-4 py-2 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[13px] rounded-[6px] transition-colors duration-100 disabled:opacity-40"
-                        >
-                          {generating ? 'Génération…' : 'Générer mon code'}
-                        </button>
-                      )}
-
-                      {/* Étape 5 — copier et envoyer */}
-                      {isStep5 && linkCode && (
-                        <div className="mt-3 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[14px] font-mono text-[#2E7CD1] tracking-widest">
-                              /link {linkCode}
-                            </code>
-                            <button
-                              onClick={copyCommand}
-                              className={`px-3 py-2 rounded-[6px] text-[12px] transition-colors duration-100 shrink-0 ${
-                                copied
-                                  ? 'bg-emerald-500/20 text-emerald-400'
-                                  : 'bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B]'
-                              }`}
-                            >
-                              {copied ? '✓ Copié' : 'Copier'}
-                            </button>
-                          </div>
-                          {expiryLabel && (
-                            <p className="text-[12px] text-[#606060]">⏱ Code valide jusqu&apos;à {expiryLabel} — génère-en un nouveau si expiré.</p>
-                          )}
-                          <button
-                            onClick={generateCode}
-                            disabled={generating}
-                            className="text-[12px] text-[#606060] hover:text-[#9B9B9B] transition-colors duration-100"
-                          >
-                            Régénérer un code
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+function Step({ n, title, children, dim = false }: {
+  n: number;
+  title: string;
+  children: React.ReactNode;
+  dim?: boolean;
+}) {
+  return (
+    <div className={`flex gap-4 ${dim ? 'opacity-40' : ''}`}>
+      <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 bg-[#2E7CD1] text-white">
+        {n}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium text-[#D4D4D4] mb-1.5">{title}</p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function CodeBlock({ value, dim = false }: { value: string; dim?: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <code className={`flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] font-mono ${dim ? 'text-[#606060]' : 'text-[#D4D4D4]'}`}>
+        {value}
+      </code>
+      <button
+        onClick={copy}
+        className={`px-3 py-2 rounded-[6px] text-[12px] shrink-0 transition-colors duration-100 ${
+          copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B]'
+        }`}
+      >
+        {copied ? '✓' : 'Copier'}
+      </button>
     </div>
   );
 }
