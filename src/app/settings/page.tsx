@@ -9,6 +9,21 @@ interface BotStatus {
   bot_username: string | null;
 }
 
+interface InviteCode {
+  code: string;
+  use_count: number;
+  max_uses: number;
+  created_at: string;
+  used_at: string | null;
+  used_by_email: string | null;
+}
+
+interface AdminUser {
+  email: string | null;
+  invite_code: string | null;
+  created_at: string;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -20,6 +35,11 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const tokenRef = useRef<HTMLInputElement>(null);
+
+  // Admin state
+  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [generatingCode, setGeneratingCode] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -33,7 +53,17 @@ export default function SettingsPage() {
           .select('is_admin')
           .eq('user_id', user.id)
           .single();
-        setIsAdmin(profile?.is_admin ?? false);
+        const admin = profile?.is_admin ?? false;
+        setIsAdmin(admin);
+
+        if (admin) {
+          const [codesRes, usersRes] = await Promise.all([
+            fetch('/api/admin/invite-codes'),
+            fetch('/api/admin/users'),
+          ]);
+          setInviteCodes(await codesRes.json());
+          setAdminUsers(await usersRes.json());
+        }
       }
 
       const res = await fetch('/api/telegram/setup-bot');
@@ -43,6 +73,19 @@ export default function SettingsPage() {
     };
     init();
   }, []);
+
+  const generateCode = async () => {
+    setGeneratingCode(true);
+    try {
+      const res = await fetch('/api/admin/invite-codes', { method: 'POST' });
+      if (res.ok) {
+        const codesRes = await fetch('/api/admin/invite-codes');
+        setInviteCodes(await codesRes.json());
+      }
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
 
   const setupBot = async () => {
     if (!tokenInput.trim()) return;
@@ -116,7 +159,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Telegram */}
-        <section className="bg-[#202020] border border-[#2A2A2A] rounded-[8px] p-5">
+        <section className="bg-[#202020] border border-[#2A2A2A] rounded-[8px] p-5 mb-4">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-[15px] font-medium">Bot Telegram</h2>
             {!loading && (
@@ -227,13 +270,103 @@ export default function SettingsPage() {
               {/* Étape 6 */}
               <Step n={6} title="Envoie ta première note !" dim>
                 <p className="text-[13px] text-[#9B9B9B] leading-relaxed">
-                  Une fois connecté, ouvre ton bot dans Telegram et envoie n&apos;importe quel message — il apparaîtra instantanément dans Brayn.
+                  Une fois connecté, ouvre ton bot dans Telegram et envoie n'importe quel message — il apparaîtra instantanément dans Brayn.
                 </p>
               </Step>
 
             </div>
           )}
         </section>
+
+        {/* Administration (admin only) */}
+        {isAdmin && (
+          <section className="bg-[#202020] border border-[#2A2A2A] rounded-[8px] p-5 space-y-6">
+            <h2 className="text-[15px] font-medium">Administration</h2>
+
+            {/* Codes d'invitation */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[13px] font-medium text-[#D4D4D4]">Codes d'invitation</h3>
+                <button
+                  onClick={generateCode}
+                  disabled={generatingCode}
+                  className="px-3 py-1.5 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] rounded-[6px] transition-colors duration-100 disabled:opacity-40"
+                >
+                  {generatingCode ? 'Génération…' : '+ Générer un code'}
+                </button>
+              </div>
+              {inviteCodes.length === 0 ? (
+                <p className="text-[13px] text-[#606060]">Aucun code pour l'instant.</p>
+              ) : (
+                <div className="border border-[#2A2A2A] rounded-[6px] overflow-hidden">
+                  <table className="w-full text-[12px]">
+                    <thead>
+                      <tr className="border-b border-[#2A2A2A] bg-[#1A1A1A]">
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Code</th>
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Statut</th>
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Utilisé par</th>
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inviteCodes.map((c) => {
+                        const used = c.use_count >= c.max_uses;
+                        return (
+                          <tr key={c.code} className="border-b border-[#2A2A2A] last:border-0">
+                            <td className="px-3 py-2 font-mono text-[#D4D4D4]">{c.code}</td>
+                            <td className="px-3 py-2">
+                              <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
+                                used ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#2A2A2A] text-[#9B9B9B]'
+                              }`}>
+                                {used ? 'utilisé' : 'libre'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-[#9B9B9B]">{c.used_by_email ?? '—'}</td>
+                            <td className="px-3 py-2 text-[#606060]">
+                              {c.used_at ? new Date(c.used_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Utilisateurs */}
+            <div>
+              <h3 className="text-[13px] font-medium text-[#D4D4D4] mb-3">Utilisateurs</h3>
+              {adminUsers.length === 0 ? (
+                <p className="text-[13px] text-[#606060]">Aucun utilisateur.</p>
+              ) : (
+                <div className="border border-[#2A2A2A] rounded-[6px] overflow-hidden">
+                  <table className="w-full text-[12px]">
+                    <thead>
+                      <tr className="border-b border-[#2A2A2A] bg-[#1A1A1A]">
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Email</th>
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Code utilisé</th>
+                        <th className="text-left px-3 py-2 text-[#606060] font-medium">Inscrit le</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminUsers.map((u, i) => (
+                        <tr key={i} className="border-b border-[#2A2A2A] last:border-0">
+                          <td className="px-3 py-2 text-[#D4D4D4]">{u.email ?? '—'}</td>
+                          <td className="px-3 py-2 font-mono text-[#9B9B9B]">{u.invite_code ?? '—'}</td>
+                          <td className="px-3 py-2 text-[#606060]">
+                            {new Date(u.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
       </div>
     </div>
   );
