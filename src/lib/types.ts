@@ -92,21 +92,21 @@ export const CATEGORY_DOT: Record<NoteCategory, string> = {
 export type NoteSource = 'telegram' | 'desktop' | 'youtube';
 
 export interface Note {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    source: NoteSource;
-    seen: boolean;
-    categories: NoteCategory[];
-    tags: string[];
-    links: string[];
-    original_text: string;
-    clean_original_language: string | null;
-    clean_other_language: string | null;
-    content_json?: any; // <-- pour BlockNote
-    full_text?: string | null;
-    user_id?: string;
-  }
+  id: string;
+  created_at: string;
+  updated_at: string;
+  source: NoteSource;
+  seen: boolean;
+  categories: NoteCategory[];
+  tags: string[];
+  links: string[];
+  original_text: string;
+  clean_original_language: string | null;
+  content_json?: unknown;
+  full_text?: string | null;
+  user_id?: string;
+  ai_status: 'pending' | 'processing' | 'done' | 'failed';
+}
 
 export interface UserProfile {
   user_id: string;

@@ -53,7 +53,7 @@ export async function POST(
   // Récupérer la note pour le contexte
   const { data: note, error: noteError } = await supabase
     .from('notes')
-    .select('original_text, clean_original_language, clean_other_language, full_text')
+    .select('original_text, clean_original_language, full_text')
     .eq('id', id)
     .single();
 

@@ -16,11 +16,11 @@ export async function POST(req: NextRequest) {
       .from("notes")
       .insert({
         original_text: title,
-        clean_original_language: title,
         source,
         seen: false,
         categories: [],
         user_id: user.id,
+        ai_status: 'pending',
       })
       .select()
       .single();

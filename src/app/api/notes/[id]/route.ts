@@ -7,7 +7,7 @@ const ALLOWED_FIELDS = [
   "full_text",
   "original_text",
   "clean_original_language",
-  "clean_other_language",
+  "ai_status",
 ] as const;
 
 export async function PATCH(

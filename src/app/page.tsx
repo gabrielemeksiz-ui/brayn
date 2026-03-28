@@ -4,21 +4,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useUser } from '@/lib/hooks/useUser';
+import { useRealtimeNotes } from '@/lib/hooks/useRealtimeNotes';
 import type { Note, NoteCategory } from '@/lib/types';
 import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
-import { NoteEditor } from '@/components/NoteEditor';
-import { TweetEmbed } from '@/components/TweetEmbed';
+import { NoteList } from '@/components/NoteList';
+import { NoteDetail } from '@/components/NoteDetail';
 
 function extractTweetUrls(links: string[], originalText: string): string[] {
   const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/gi;
   const fromLinks = links.filter(l => /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i.test(l));
   if (fromLinks.length > 0) return fromLinks;
   return [...originalText.matchAll(tweetRegex)].map(m => m[0]);
-}
-
-function extractYoutubeUrls(links: string[] | null): string[] {
-  return (links ?? []).filter(l => /https?:\/\/(www\.)?youtube\.com\/watch\?v=/.test(l));
 }
 
 function noteTitle(note: { links: string[] | null; original_text: string | null; clean_original_language?: string | null }): string {
@@ -31,7 +27,7 @@ type Section = 'new' | 'all' | 'recent' | NoteCategory;
 
 export default function BraynPage() {
   const router = useRouter();
-  const { isAdmin } = useUser();
+  const { isAdmin, user } = useUser();
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState<Note | null>(null);
   const [section, setSection] = useState<Section>('new');
@@ -57,36 +53,19 @@ export default function BraynPage() {
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
-  const [tweetText, setTweetText] = useState<string | null>(null);
 
   // Suppression
-  const [selectMode, setSelectMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [confirmDelete, setConfirmDelete] = useState<'multi' | string | null>(null); // 'multi' | noteId
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const deleteNotes = async (ids: string[]) => {
     await Promise.all(ids.map(id => fetch(`/api/notes/${id}`, { method: 'DELETE' })));
     setAllNotes(prev => prev.filter(n => !ids.includes(n.id)));
     setNotes(prev => prev.filter(n => !ids.includes(n.id)));
     if (selected && ids.includes(selected.id)) setSelected(null);
-    setSelectedIds(new Set());
-    setSelectMode(false);
     setConfirmDelete(null);
   };
 
-  // Chat IA
-  type ChatMessage = { id: string; role: 'user' | 'assistant'; content: string; created_at: string };
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
-
-  // Titre éditable inline
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState('');
-  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Fermer le menu action au clic extérieur
   useEffect(() => {
@@ -138,15 +117,6 @@ export default function BraynPage() {
     fetchAllNotes();
   }, [fetchAllNotes]);
 
-  // Polling toutes les 15s pour détecter les nouvelles notes (ex: depuis Telegram)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchNotes();
-      fetchAllNotes();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [fetchNotes, fetchAllNotes]);
-
   useEffect(() => {
     fetch('/api/categories')
       .then(r => r.json())
@@ -164,17 +134,30 @@ export default function BraynPage() {
       .catch(() => {});
   }, []);
 
+  useRealtimeNotes({
+    userId: user?.id,
+    onInsert: useCallback((note: Note) => {
+      setAllNotes(prev => [note, ...prev.filter(n => n.id !== note.id)]);
+      setNotes(prev => [note, ...prev.filter(n => n.id !== note.id)]);
+    }, []),
+    onUpdate: useCallback((note: Note) => {
+      setAllNotes(prev => prev.map(n => n.id === note.id ? note : n));
+      setNotes(prev => prev.map(n => n.id === note.id ? note : n));
+      setSelected(prev => prev?.id === note.id ? { ...prev, ...note } : prev);
+    }, []),
+    onDelete: useCallback((noteId: string) => {
+      setAllNotes(prev => prev.filter(n => n.id !== noteId));
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+      setSelected(prev => prev?.id === noteId ? null : prev);
+    }, []),
+  });
+
   const getNewNotes = () => {
     return allNotes.filter(note => !note.seen);
   };
 
   const openNote = async (note: Note) => {
-    console.log('openNote id =', note.id, 'seen =', note.seen);
-
     setSelected({ ...note, seen: true });
-    setTweetText(null);
-    setChatMessages([]);
-    setChatInput('');
 
     // Expand la première catégorie de la note dans la sidebar
     if (note.categories.length > 0) {
@@ -184,12 +167,6 @@ export default function BraynPage() {
         return next;
       });
     }
-
-    // Charger l'historique du chat
-    fetch(`/api/notes/${note.id}/chat`)
-      .then(r => r.json())
-      .then(data => setChatMessages(Array.isArray(data) ? data : []))
-      .catch(() => {});
 
     if (!note.seen) {
       try {
@@ -244,9 +221,6 @@ export default function BraynPage() {
       if (note) {
         setSection('new');
         openNote(note);
-        setEditingTitle(true);
-        setTitleValue('Nouvelle note');
-        setTimeout(() => titleInputRef.current?.select(), 80);
       }
     } catch (err) {
       console.error('Failed to create note:', err);
@@ -274,20 +248,6 @@ export default function BraynPage() {
       }
     } catch { /* fail silently */ }
     finally { setYoutubeSyncing(false); }
-  };
-
-  const saveTitle = async () => {
-    if (!selected || !titleValue.trim()) return;
-    const newTitle = titleValue.trim();
-    setSelected(prev => prev ? { ...prev, original_text: newTitle } : prev);
-    setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, original_text: newTitle } : n));
-    setAllNotes(prev => prev.map(n => n.id === selected.id ? { ...n, original_text: newTitle } : n));
-    setEditingTitle(false);
-    await fetch(`/api/notes/${selected.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ original_text: newTitle }),
-    });
   };
 
   const createNewCategory = async () => {
@@ -702,385 +662,30 @@ export default function BraynPage() {
           </div>
         </div>
 
-        {/* Contenu — note ouverte ou liste ou état vide */}
+        {/* Contenu — note ouverte ou liste */}
         {selected ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-
-            {/* Zone note — scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="w-full max-w-[900px] mx-auto px-8 pt-6 pb-16">
-
-                {/* Top actions */}
-                <div className="flex justify-end items-center gap-2 mb-6">
-                  <button
-                    onClick={() => setShowChat(v => !v)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] transition-colors duration-100 border
-                      ${showChat
-                        ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
-                        : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
-                      }`}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    Chat IA
-                    {chatMessages.length > 0 && (
-                      <span className="text-[10px] bg-[#2E7CD1] text-white rounded-full px-1.5 py-0.5 font-mono tabular-nums">
-                        {chatMessages.length}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(selected.id)}
-                    className="text-[#606060] hover:text-red-400 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-red-500/10 transition-colors duration-100"
-                    title="Supprimer cette note"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                {/* Title */}
-                <div className="mb-4">
-                  {editingTitle ? (
-                    <input
-                      ref={titleInputRef}
-                      value={titleValue}
-                      onChange={e => setTitleValue(e.target.value)}
-                      onBlur={saveTitle}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); saveTitle(); } if (e.key === 'Escape') setEditingTitle(false); }}
-                      className="w-full bg-transparent text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug focus:outline-none border-b border-[#2E7CD1] pb-1"
-                      autoFocus
-                    />
-                  ) : (
-                    <h1
-                      className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug cursor-text hover:text-white transition-colors duration-100"
-                      onClick={() => { setEditingTitle(true); setTitleValue(selected.original_text ?? ''); setTimeout(() => titleInputRef.current?.select(), 30); }}
-                      title="Cliquer pour modifier le titre"
-                    >
-                      {noteTitle(selected)}
-                    </h1>
-                  )}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-[13px] text-[#9B9B9B]">{formatDate(selected.created_at)}</span>
-                    <span className="text-[#2A2A2A]">·</span>
-                    <span className="text-[13px] text-[#9B9B9B] capitalize">{selected.source}</span>
-                    {selected.categories.length > 0 && <span className="text-[#2A2A2A]">·</span>}
-                    {selected.categories.map(cat => (
-                      <span
-                        key={cat}
-                        className={`text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1 ${getCatColor(cat)}`}
-                      >
-                        {getCatLabel(cat)}
-                        <button
-                          onClick={() => updateNoteCategories(selected, selected.categories.filter(c => c !== cat))}
-                          className="opacity-50 hover:opacity-100 leading-none"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                    <select
-                      value=""
-                      onChange={e => {
-                        const cat = e.target.value as NoteCategory;
-                        if (cat && !selected.categories.includes(cat)) {
-                          updateNoteCategories(selected, [...selected.categories, cat]);
-                        }
-                      }}
-                      className="text-[12px] bg-transparent border border-[#2A2A2A] rounded-[4px] px-2 py-[2px] text-[#9B9B9B] focus:outline-none hover:border-[#333] hover:text-[#D4D4D4] cursor-pointer transition-colors duration-100"
-                    >
-                      <option value="">+ Catégorie</option>
-                      {getAllCategories().filter(c => !selected.categories.includes(c as NoteCategory)).map(cat => (
-                        <option key={cat} value={cat}>{getCatLabel(cat)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="border-b border-[#2A2A2A] mb-4" />
-
-                {/* Tweet Embed */}
-                {(() => {
-                  const tweetUrls = extractTweetUrls(selected.links, selected.original_text);
-                  if (tweetUrls.length === 0) return null;
-                  return (
-                    <div className="mb-6 space-y-3">
-                      {tweetUrls.map(url => (
-                        <TweetEmbed key={url} url={url} onData={d => setTweetText(d.text)} />
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* YouTube Link */}
-                {(() => {
-                  const youtubeUrls = extractYoutubeUrls(selected.links);
-                  if (youtubeUrls.length === 0) return null;
-                  return (
-                    <div className="mb-4 flex flex-col gap-1">
-                      {youtubeUrls.map(url => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[13px] text-[#2E7CD1] hover:underline break-all"
-                        >
-                          {url}
-                        </a>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Editor */}
-                <NoteEditor
-                  noteId={selected.id}
-                  initialFullText={(() => {
-                    const isTweet = extractTweetUrls(selected.links, selected.original_text).length > 0;
-                    if (isTweet) return tweetText ?? selected.full_text ?? '';
-                    const youtubeUrls = extractYoutubeUrls(selected.links);
-                    const fullText = selected.full_text ?? selected.clean_original_language ?? selected.original_text ?? '';
-                    if (youtubeUrls.length > 0) {
-                      // Strip the leading "🔗 <url>\n\n" line so it's not duplicated
-                      return fullText.replace(/^🔗 https?:\/\/[^\n]+\n\n/, '');
-                    }
-                    return fullText;
-                  })()}
-                />
-              </div>
-            </div>
-
-            {/* Panneau Chat IA — fixe en bas */}
-            {showChat && (
-              <div className="h-[320px] shrink-0 border-t border-[#2A2A2A] flex flex-col bg-[#191919]">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2A2A2A] shrink-0">
-                  <div className="flex items-center gap-2">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2E7CD1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    <span className="text-[13px] font-medium text-[#D4D4D4]">Chat IA</span>
-                    <span className="text-[12px] text-[#606060]">— réfléchissons ensemble</span>
-                  </div>
-                  <button
-                    onClick={() => setShowChat(false)}
-                    className="text-[#606060] hover:text-[#D4D4D4] w-5 h-5 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100 text-base leading-none"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                  {chatMessages.length === 0 && (
-                    <p className="text-[13px] text-[#606060] text-center pt-6">
-                      Pose une question sur cette note…
-                    </p>
-                  )}
-                  {chatMessages.map(msg => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] px-3 py-2 rounded-[6px] text-[13px] leading-relaxed whitespace-pre-wrap
-                          ${msg.role === 'user'
-                            ? 'bg-[#2E7CD1] text-white rounded-br-[2px]'
-                            : 'bg-[#252525] text-[#D4D4D4] border border-[#2A2A2A] rounded-bl-[2px]'
-                          }`}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))}
-                  {chatLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-[#252525] border border-[#2A2A2A] rounded-[6px] rounded-bl-[2px] px-3 py-2">
-                        <span className="flex gap-1 items-center">
-                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
-                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
-                          <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatBottomRef} />
-                </div>
-
-                {/* Input */}
-                <div className="px-4 py-3 border-t border-[#2A2A2A] shrink-0">
-                  <form
-                    onSubmit={async e => {
-                      e.preventDefault();
-                      const msg = chatInput.trim();
-                      if (!msg || chatLoading) return;
-                      const optimistic: ChatMessage = {
-                        id: Date.now().toString(),
-                        role: 'user',
-                        content: msg,
-                        created_at: new Date().toISOString(),
-                      };
-                      setChatMessages(prev => [...prev, optimistic]);
-                      setChatInput('');
-                      setChatLoading(true);
-                      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-                      try {
-                        const res = await fetch(`/api/notes/${selected.id}/chat`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ message: msg }),
-                        });
-                        const data = await res.json();
-                        const reply: ChatMessage = {
-                          id: (Date.now() + 1).toString(),
-                          role: 'assistant',
-                          content: data.reply ?? 'Erreur',
-                          created_at: new Date().toISOString(),
-                        };
-                        setChatMessages(prev => [...prev, reply]);
-                      } catch {
-                        setChatMessages(prev => [...prev, {
-                          id: (Date.now() + 1).toString(),
-                          role: 'assistant',
-                          content: 'Erreur de connexion.',
-                          created_at: new Date().toISOString(),
-                        }]);
-                      } finally {
-                        setChatLoading(false);
-                        setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-                      }
-                    }}
-                    className="flex gap-2"
-                  >
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                      placeholder="Écris ton message…"
-                      disabled={chatLoading}
-                      className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100 disabled:opacity-50"
-                    />
-                    <button
-                      type="submit"
-                      disabled={chatLoading || !chatInput.trim()}
-                      className="bg-[#2E7CD1] hover:bg-[#2568B8] text-white px-3 py-2 rounded-[4px] text-[13px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                      </svg>
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : section === 'all' ? (
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-[900px] mx-auto px-8 py-6">
-              {/* Toolbar sélection */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[13px] text-[#9B9B9B]">{notes.length} note{notes.length !== 1 ? 's' : ''}</span>
-                <div className="flex items-center gap-2">
-                  {selectMode && selectedIds.size > 0 && (
-                    <button
-                      onClick={() => setConfirmDelete('multi')}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors duration-100"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                      </svg>
-                      Supprimer ({selectedIds.size})
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()); }}
-                    className={`px-3 py-1.5 rounded-[4px] text-[13px] border transition-colors duration-100
-                      ${selectMode
-                        ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
-                        : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
-                      }`}
-                  >
-                    {selectMode ? 'Annuler' : 'Sélectionner'}
-                  </button>
-                </div>
-              </div>
-
-              {loading ? (
-                <p className="text-[#606060] text-[14px]">Chargement…</p>
-              ) : notes.length === 0 ? (
-                <p className="text-[#606060] text-[14px]">Aucune note</p>
-              ) : (
-                <div className="space-y-1">
-                  {notes.map(note => {
-                    const isChecked = selectedIds.has(note.id);
-                    return (
-                      <div
-                        key={note.id}
-                        onClick={() => {
-                          if (selectMode) {
-                            setSelectedIds(prev => {
-                              const next = new Set(prev);
-                              isChecked ? next.delete(note.id) : next.add(note.id);
-                              return next;
-                            });
-                          } else {
-                            openNote(note);
-                          }
-                        }}
-                        className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-[6px] border transition-colors duration-100 cursor-pointer group
-                          ${isChecked
-                            ? 'bg-red-500/10 border-red-500/30'
-                            : 'bg-[#252525] hover:bg-[#2A2A2A] border-[#2A2A2A] hover:border-[#333]'
-                          }`}
-                      >
-                        {selectMode && (
-                          <div className={`w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors duration-100
-                            ${isChecked ? 'bg-red-500 border-red-500' : 'border-[#444]'}`}
-                          >
-                            {isChecked && (
-                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="2 6 5 9 10 3"/>
-                              </svg>
-                            )}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
-                            {noteTitle(note)}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
-                            {note.categories.slice(0, 2).map(cat => (
-                              <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${getCatColor(cat)}`}>
-                                {getCatLabel(cat)}
-                              </span>
-                            ))}
-                            {!note.seen && (
-                              <span className="text-[11px] text-[#2E7CD1] font-medium">Nouveau</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+          <NoteDetail
+            note={selected}
+            onBack={() => setSelected(null)}
+            onNoteUpdated={(updated) => {
+              setSelected(updated);
+              setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
+              setAllNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
+            }}
+            onDeleteRequest={(id) => setConfirmDelete(id)}
+            getCatColor={getCatColor}
+            getCatLabel={getCatLabel}
+            getAllCategories={getAllCategories}
+          />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 select-none">
-            <span className="text-4xl opacity-10">🧠</span>
-            <p className="text-[#606060] text-[14px]">Sélectionne une note dans la sidebar</p>
-          </div>
+          <NoteList
+            notes={notes}
+            loading={loading}
+            onSelect={openNote}
+            onDeleteMulti={(ids) => { deleteNotes(ids); }}
+            getCatColor={getCatColor}
+            getCatLabel={getCatLabel}
+          />
         )}
       </main>
 
@@ -1096,9 +701,7 @@ export default function BraynPage() {
               </div>
               <div>
                 <p className="text-[14px] font-medium text-[#D4D4D4]">
-                  {confirmDelete === 'multi'
-                    ? `Supprimer ${selectedIds.size} note${selectedIds.size > 1 ? 's' : ''} ?`
-                    : 'Supprimer cette note ?'}
+                  Supprimer cette note ?
                 </p>
                 <p className="text-[12px] text-[#606060] mt-0.5">Cette action est irréversible.</p>
               </div>
@@ -1112,11 +715,7 @@ export default function BraynPage() {
               </button>
               <button
                 onClick={() => {
-                  if (confirmDelete === 'multi') {
-                    deleteNotes(Array.from(selectedIds));
-                  } else {
-                    deleteNotes([confirmDelete]);
-                  }
+                  deleteNotes([confirmDelete as string]);
                 }}
                 className="px-4 py-2 text-[13px] rounded-[4px] bg-red-500 hover:bg-red-600 text-white font-medium transition-colors duration-100"
               >
