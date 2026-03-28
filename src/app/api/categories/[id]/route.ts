@@ -27,7 +27,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  const { error } = await supabase.from('categories').delete().eq('id', id);
+  // Remove this category from all notes belonging to the user
+  await supabase.rpc('remove_category_from_notes', {
+    category_id: id,
+    p_user_id: user.id,
+  });
+
+  const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

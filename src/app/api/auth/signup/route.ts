@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceClient } from "@/lib/supabase";
-import { seedBuiltinCategories } from "@/lib/seed-categories";
 
 export async function POST(req: Request) {
   try {
@@ -53,13 +52,10 @@ export async function POST(req: Request) {
 
     const userId = authData.user.id;
 
-    // Create user profile
+    // Create user profile (onboarding_completed defaults to false)
     await supabase
       .from("user_profiles")
       .insert({ user_id: userId, is_admin: false });
-
-    // Seed builtin categories for the new user
-    await seedBuiltinCategories(supabase, userId);
 
     // Mark invitation code as used
     await supabase

@@ -30,12 +30,11 @@ export async function POST(req: NextRequest) {
         .update({ ai_status: 'processing' })
         .eq('id', noteId);
 
-      // Load custom categories
+      // Load all categories for user
       const { data: dbCategories } = await supabase
         .from('categories')
-        .select('id, label, description')
+        .select('id, label, ai_description')
         .eq('user_id', userId)
-        .eq('is_builtin', false)
         .eq('hidden', false);
 
       const customCategories = dbCategories ?? [];
@@ -97,9 +96,8 @@ export async function POST(req: NextRequest) {
 
     const { data: dbCategories } = await supabase
       .from("categories")
-      .select("id, label, description")
+      .select("id, label, ai_description")
       .eq("user_id", userId)
-      .eq("is_builtin", false)
       .eq("hidden", false);
 
     const customCategories = dbCategories ?? [];

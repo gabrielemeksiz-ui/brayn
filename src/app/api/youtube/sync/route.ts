@@ -86,9 +86,8 @@ export async function POST(_req: NextRequest) {
     try {
       const { data: dbCategories } = await supabase
         .from('categories')
-        .select('id, label, description')
+        .select('id, label, ai_description')
         .eq('user_id', user.id)
-        .eq('is_builtin', false)
         .eq('hidden', false);
 
       const classifyResult = await classifyNote(

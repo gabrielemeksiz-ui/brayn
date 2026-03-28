@@ -142,3 +142,4 @@ npm run lint     # ESLint
 - **API** : Next.js Route Handlers, pas de contrôleurs séparés
 - **État** : useState React, pas de state manager externe
 - **Polling** : Toutes les 15s pour les nouvelles notes Telegram
+

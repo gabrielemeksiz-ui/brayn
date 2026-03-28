@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { useUser } from '@/lib/hooks/useUser';
 import { useRealtimeNotes } from '@/lib/hooks/useRealtimeNotes';
+import { useCategories } from '@/lib/hooks/useCategories';
 import type { Note, NoteCategory } from '@/lib/types';
-import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_OUTLINE, CATEGORY_DOT } from '@/lib/types';
 import { NoteList } from '@/components/NoteList';
 import { NoteDetail } from '@/components/NoteDetail';
 
@@ -23,38 +23,30 @@ function noteTitle(note: { links: string[] | null; original_text: string | null;
   return note.original_text ?? '';
 }
 
-type Section = 'new' | 'all' | 'recent' | NoteCategory;
+type Section = 'new' | 'all' | 'recent' | string;
 
 export default function BraynPage() {
   const router = useRouter();
   const { isAdmin, user } = useUser();
+  const { categories, getCatLabel, getCatColor, getCatEmoji, refetch: refetchCategories } = useCategories();
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState<Note | null>(null);
   const [section, setSection] = useState<Section>('new');
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState<NoteCategory | null>(null);
+  const [filterCat, setFilterCat] = useState<string | null>(null);
   const [filterPeriod, setFilterPeriod] = useState<'today' | '7d' | '30d' | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [allNotes, setAllNotes] = useState<Note[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<NoteCategory | string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandNewSection, setExpandNewSection] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [youtubeSyncing, setYoutubeSyncing] = useState(false);
   const [youtubeSyncResult, setYoutubeSyncResult] = useState<string | null>(null);
-  const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDesc, setNewCategoryDesc] = useState('');
-  const [customCategories, setCustomCategories] = useState<{id: string; label: string; description: string}[]>([]);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
-  const [editingCatDesc, setEditingCatDesc] = useState('');
-  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
-  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, {label: string; description: string}>>({});
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
-
-  // Suppression
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const deleteNotes = async (ids: string[]) => {
@@ -67,7 +59,6 @@ export default function BraynPage() {
 
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
-  // Fermer le menu action au clic extérieur
   useEffect(() => {
     if (!showActionMenu) return;
     const handler = (e: MouseEvent) => {
@@ -78,6 +69,19 @@ export default function BraynPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showActionMenu]);
+
+  // Onboarding guard
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/user/profile')
+      .then(r => r.json())
+      .then(profile => {
+        if (profile && !profile.onboarding_completed) {
+          router.push('/onboarding');
+        }
+      })
+      .catch(() => {});
+  }, [user, router]);
 
   const fetchAllNotes = useCallback(async () => {
     const res = await fetch('/api/notes');
@@ -117,23 +121,6 @@ export default function BraynPage() {
     fetchAllNotes();
   }, [fetchAllNotes]);
 
-  useEffect(() => {
-    fetch('/api/categories')
-      .then(r => r.json())
-      .then((rows: { id: string; label: string; description: string; is_builtin: boolean; hidden: boolean }[]) => {
-        setCustomCategories(rows.filter(r => !r.is_builtin).map(r => ({ id: r.id, label: r.label, description: r.description })));
-        const overrides: Record<string, { label: string; description: string }> = {};
-        const hidden = new Set<string>();
-        rows.filter(r => r.is_builtin).forEach(r => {
-          overrides[r.id] = { label: r.label, description: r.description };
-          if (r.hidden) hidden.add(r.id);
-        });
-        setCategoryOverrides(overrides);
-        setHiddenCategories(hidden);
-      })
-      .catch(() => {});
-  }, []);
-
   useRealtimeNotes({
     userId: user?.id,
     onInsert: useCallback((note: Note) => {
@@ -152,14 +139,11 @@ export default function BraynPage() {
     }, []),
   });
 
-  const getNewNotes = () => {
-    return allNotes.filter(note => !note.seen);
-  };
+  const getNewNotes = () => allNotes.filter(note => !note.seen);
 
   const openNote = async (note: Note) => {
     setSelected({ ...note, seen: true });
 
-    // Expand la première catégorie de la note dans la sidebar
     if (note.categories.length > 0) {
       setExpandedCategories(prev => {
         const next = new Set(prev);
@@ -182,7 +166,6 @@ export default function BraynPage() {
         }
 
         const updated: Note = await res.json();
-
         setNotes(prev => prev.map(n => (n.id === updated.id ? { ...n, ...updated } : n)));
         setAllNotes(prev => prev.map(n => (n.id === updated.id ? { ...n, ...updated } : n)));
       } catch (e) {
@@ -191,7 +174,7 @@ export default function BraynPage() {
     }
   };
 
-  const toggleCategoryExpand = (cat: NoteCategory | string) => {
+  const toggleCategoryExpand = (cat: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(cat)) {
       newExpanded.delete(cat);
@@ -201,11 +184,8 @@ export default function BraynPage() {
     setExpandedCategories(newExpanded);
   };
 
-  const getCategoryNotes = (cat: NoteCategory | string) => {
-    return allNotes.filter(note =>
-      (note.categories as (NoteCategory | string)[]).includes(cat),
-    );
-  };
+  const getCategoryNotes = (cat: string) =>
+    allNotes.filter(note => (note.categories as string[]).includes(cat));
 
   const createEmptyNote = async () => {
     try {
@@ -248,35 +228,6 @@ export default function BraynPage() {
       }
     } catch { /* fail silently */ }
     finally { setYoutubeSyncing(false); }
-  };
-
-  const createNewCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    const id = newCategoryName.toLowerCase().replace(/\s+/g, '_');
-    if (customCategories.find(c => c.id === id)) return;
-    const newCat = { id, label: newCategoryName, description: newCategoryDesc };
-    setCustomCategories([...customCategories, newCat]);
-    setNewCategoryName('');
-    setNewCategoryDesc('');
-    setShowNewCategoryForm(false);
-    setShowActionMenu(false);
-    await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newCat, is_builtin: false }),
-    });
-  };
-
-  const getAllCategories = (): (NoteCategory | string)[] => {
-    return [...ALL_CATEGORIES, ...customCategories.map(c => c.id)].filter(c => !hiddenCategories.has(c));
-  };
-
-  const getCatLabel = (cat: string): string => {
-    return categoryOverrides[cat]?.label || CATEGORY_LABELS[cat as NoteCategory] || customCategories.find(c => c.id === cat)?.label || cat;
-  };
-
-  const getCatColor = (cat: string): string => {
-    return CATEGORY_COLORS[cat as NoteCategory] || 'border-[#555] text-[#B0B0B0]';
   };
 
   const updateNoteCategories = async (note: Note, newCategories: NoteCategory[]) => {
@@ -337,12 +288,6 @@ export default function BraynPage() {
               >
                 Créer une note
               </button>
-              <button
-                onClick={() => { setShowActionMenu(false); setShowNewCategoryForm(true); }}
-                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A]"
-              >
-                Créer une catégorie
-              </button>
               {isAdmin && (
                 <button
                   onClick={syncYoutube}
@@ -357,40 +302,6 @@ export default function BraynPage() {
 
           {youtubeSyncResult && (
             <p className="text-[11px] text-[#9B9B9B] px-1 mt-1">{youtubeSyncResult}</p>
-          )}
-
-          {showNewCategoryForm && (
-            <div className="space-y-2 mt-2">
-              <input
-                type="text"
-                value={newCategoryName}
-                onChange={e => setNewCategoryName(e.target.value)}
-                placeholder="Nom de la catégorie…"
-                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
-                autoFocus
-              />
-              <textarea
-                value={newCategoryDesc}
-                onChange={e => setNewCategoryDesc(e.target.value)}
-                placeholder="Description pour l'IA…"
-                rows={2}
-                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-[12px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-none"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={createNewCategory}
-                  className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1.5 rounded-[4px] transition-colors duration-100 font-medium"
-                >
-                  Créer
-                </button>
-                <button
-                  onClick={() => { setShowNewCategoryForm(false); setNewCategoryName(''); setNewCategoryDesc(''); }}
-                  className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1.5 rounded-[4px] transition-colors duration-100"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
           )}
         </div>
 
@@ -445,54 +356,30 @@ export default function BraynPage() {
         <div className="px-3 mt-2">
           <p className="text-[11px] text-[#606060] font-medium uppercase tracking-wider px-1 pt-1 pb-1">Catégories</p>
         </div>
-        {getAllCategories().map(cat => {
-          const isBuiltin = ALL_CATEGORIES.includes(cat as NoteCategory);
-          const isExpanded = expandedCategories.has(cat);
-          const categoryNotes = getCategoryNotes(cat);
-          const customCat = customCategories.find(c => c.id === cat);
-          const override = categoryOverrides[cat];
-          const label = override?.label || CATEGORY_LABELS[cat as NoteCategory] || customCat?.label || cat;
-          const description = override?.description ?? customCat?.description ?? '';
-          const isEditing = editingCatId === cat;
+        {categories.map(cat => {
+          const isExpanded = expandedCategories.has(cat.id);
+          const categoryNotes = getCategoryNotes(cat.id);
+          const isEditing = editingCatId === cat.id;
+          const color = getCatColor(cat.id);
 
           const handleSave = async () => {
             if (!editingCatName.trim()) return;
-            if (isBuiltin) {
-              setCategoryOverrides(prev => ({ ...prev, [cat]: { label: editingCatName, description: editingCatDesc } }));
-              await fetch('/api/categories', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: cat, label: editingCatName, description: editingCatDesc, is_builtin: true, hidden: false }),
-              });
-            } else {
-              setCustomCategories(prev => prev.map(c =>
-                c.id === cat ? { ...c, label: editingCatName, description: editingCatDesc } : c
-              ));
-              await fetch(`/api/categories/${cat}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ label: editingCatName, description: editingCatDesc }),
-              });
-            }
+            await fetch(`/api/categories/${cat.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ label: editingCatName }),
+            });
+            await refetchCategories();
             setEditingCatId(null);
           };
 
           const handleDelete = async () => {
-            if (isBuiltin) {
-              setHiddenCategories(prev => new Set([...prev, cat]));
-              await fetch('/api/categories', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: cat, label, description, is_builtin: true, hidden: true }),
-              });
-            } else {
-              setCustomCategories(prev => prev.filter(c => c.id !== cat));
-              await fetch(`/api/categories/${cat}`, { method: 'DELETE' });
-            }
+            await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+            await refetchCategories();
           };
 
           return (
-            <div key={cat} className="space-y-1">
+            <div key={cat.id} className="space-y-1">
               {isEditing ? (
                 <div className="space-y-1.5 px-2 py-1">
                   <input
@@ -502,13 +389,6 @@ export default function BraynPage() {
                     onKeyDown={e => e.key === 'Enter' && handleSave()}
                     className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[13px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
                     autoFocus
-                  />
-                  <textarea
-                    value={editingCatDesc}
-                    onChange={e => setEditingCatDesc(e.target.value)}
-                    placeholder="Description pour l'IA…"
-                    rows={2}
-                    className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[12px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-none"
                   />
                   <div className="flex gap-1.5">
                     <button
@@ -528,34 +408,35 @@ export default function BraynPage() {
               ) : (
                 <div
                   className={`group flex items-center rounded-[4px] transition-colors duration-100 ${
-                    dragOverCat === cat && draggedNote && dragSourceCat !== cat
+                    dragOverCat === cat.id && draggedNote && dragSourceCat !== cat.id
                       ? 'bg-[#2E7CD1]/10 outline outline-1 outline-[#2E7CD1]/30'
                       : 'hover:bg-[#2A2A2A]'
                   }`}
-                  onDragOver={e => { e.preventDefault(); setDragOverCat(cat); }}
+                  onDragOver={e => { e.preventDefault(); setDragOverCat(cat.id); }}
                   onDragLeave={() => setDragOverCat(null)}
                   onDrop={e => {
                     e.preventDefault();
                     setDragOverCat(null);
-                    if (!draggedNote || dragSourceCat === cat) return;
+                    if (!draggedNote || dragSourceCat === cat.id) return;
                     const newCats = (draggedNote.categories as string[]).filter(c => c !== dragSourceCat);
-                    if (!newCats.includes(cat)) newCats.push(cat);
+                    if (!newCats.includes(cat.id)) newCats.push(cat.id);
                     updateNoteCategories(draggedNote, newCats as NoteCategory[]);
                     setDraggedNote(null);
                     setDragSourceCat(null);
                   }}
                 >
                   <button
-                    onClick={() => toggleCategoryExpand(cat)}
+                    onClick={() => toggleCategoryExpand(cat.id)}
                     className="flex-1 text-left px-2 py-[5px] text-[14px] flex items-center gap-1.5 text-[#9B9B9B] group-hover:text-[#D4D4D4] transition-colors duration-100"
                   >
                     <span className={`text-[8px] opacity-50 transition-transform duration-100 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                    {label}
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    {getCatEmoji(cat.id)} {cat.label}
                   </button>
                   <span className="text-[11px] text-[#606060] pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
                   <div className="hidden group-hover:flex items-center gap-1 pr-1.5">
                     <button
-                      onClick={() => { setEditingCatId(cat); setEditingCatName(label); setEditingCatDesc(description); }}
+                      onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.label); }}
                       className="text-[#909090] hover:text-[#D4D4D4] text-sm w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100"
                       title="Renommer"
                     >
@@ -580,9 +461,9 @@ export default function BraynPage() {
                       <button
                         key={note.id}
                         draggable
-                        onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat); }}
+                        onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat.id); }}
                         onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
-                        onClick={() => { setSection(cat as Section); openNote(note); }}
+                        onClick={() => { setSection(cat.id as Section); openNote(note); }}
                         className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate cursor-grab active:cursor-grabbing
                           ${draggedNote?.id === note.id
                             ? 'opacity-30'
@@ -600,6 +481,7 @@ export default function BraynPage() {
             </div>
           );
         })}
+
         {/* Sidebar footer */}
         <div className="mt-auto px-3 py-3 border-t border-[#2A2A2A] flex items-center gap-2">
           <a
@@ -646,19 +528,23 @@ export default function BraynPage() {
             </select>
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            {getAllCategories().map(cat => (
-              <button
-                key={cat}
-                onClick={() => setFilterCat(filterCat === cat ? null : cat as NoteCategory)}
-                className={`px-2.5 py-[3px] rounded-[4px] text-[12px] border whitespace-nowrap transition-colors duration-100
-                  ${filterCat === cat
-                    ? getCatColor(cat)
-                    : `bg-transparent ${CATEGORY_OUTLINE[cat as NoteCategory] || 'border-[#555]'} opacity-50 hover:opacity-90`
-                  }`}
-              >
-                {getCatLabel(cat)}
-              </button>
-            ))}
+            {categories.map(cat => {
+              const color = getCatColor(cat.id);
+              const isActive = filterCat === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilterCat(filterCat === cat.id ? null : cat.id)}
+                  className="px-2.5 py-[3px] rounded-[4px] text-[12px] border whitespace-nowrap transition-all duration-100"
+                  style={isActive
+                    ? { backgroundColor: `${color}33`, color, borderColor: `${color}80` }
+                    : { backgroundColor: 'transparent', color: `${color}99`, borderColor: `${color}50`, opacity: 0.7 }
+                  }
+                >
+                  {getCatEmoji(cat.id)} {getCatLabel(cat.id)}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -675,7 +561,7 @@ export default function BraynPage() {
             onDeleteRequest={(id) => setConfirmDelete(id)}
             getCatColor={getCatColor}
             getCatLabel={getCatLabel}
-            getAllCategories={getAllCategories}
+            getAllCategories={() => categories.map(c => c.id)}
           />
         ) : (
           <NoteList

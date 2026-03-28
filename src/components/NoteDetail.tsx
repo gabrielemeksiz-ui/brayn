@@ -251,7 +251,12 @@ export function NoteDetail({
               {note.categories.map(cat => (
                 <span
                   key={cat}
-                  className={`text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1 ${getCatColor(cat)}`}
+                  className="text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1"
+                  style={{
+                    backgroundColor: `${getCatColor(cat)}20`,
+                    color: getCatColor(cat),
+                    borderColor: `${getCatColor(cat)}50`,
+                  }}
                 >
                   {getCatLabel(cat)}
                   <button

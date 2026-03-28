@@ -125,7 +125,15 @@ export function NoteList({
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
                       {note.categories.slice(0, 2).map(cat => (
-                        <span key={cat} className={`text-[11px] px-1.5 py-[1px] rounded-[4px] border ${getCatColor(cat)}`}>
+                        <span
+                          key={cat}
+                          className="text-[11px] px-1.5 py-[1px] rounded-[4px] border"
+                          style={{
+                            backgroundColor: `${getCatColor(cat)}20`,
+                            color: getCatColor(cat),
+                            borderColor: `${getCatColor(cat)}50`,
+                          }}
+                        >
                           {getCatLabel(cat)}
                         </span>
                       ))}

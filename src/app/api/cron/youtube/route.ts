@@ -128,8 +128,8 @@ async function processVideo(videoId: string, title: string, userId: string) {
   try {
     const { data: dbCategories } = await supabase
       .from("categories")
-      .select("id, label, description")
-      .eq("is_builtin", false)
+      .select("id, label, ai_description")
+      .eq("user_id", userId)
       .eq("hidden", false);
 
     const classifyResult = await classifyNote(

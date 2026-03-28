@@ -9,7 +9,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('categories')
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('sort_order', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data ?? []);
@@ -22,13 +22,13 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { id, label, description = '', is_builtin = false, hidden = false } = body;
+  const { id, label, description = '', ai_description = '', emoji = '📌', color = '#6B7280', sort_order = 0, is_builtin = false, hidden = false } = body;
 
   if (!id || !label) return NextResponse.json({ error: 'Missing id or label' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('categories')
-    .upsert({ id, label, description, is_builtin, hidden, user_id: user.id })
+    .upsert({ id, label, description, ai_description, emoji, color, sort_order, is_builtin, hidden, user_id: user.id })
     .select()
     .single();
 
