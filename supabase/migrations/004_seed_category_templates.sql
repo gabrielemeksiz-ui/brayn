@@ -1,6 +1,6 @@
 INSERT INTO category_templates (id, profile_label, profile_emoji, interests, categories) VALUES
 
-('etudiant_commerce', 'Étudiant en commerce', '🎓',
+('etudiant_commerce', 'Étudiant', '🎓',
   ARRAY['finance', 'marketing', 'géopolitique', 'entrepreneuriat'],
   '[
     {"id": "business_project", "label": "Business / Projet", "emoji": "🚀", "color": "#3B82F6", "description": "Idées business et projets entrepreneuriaux", "ai_description": "Idées business, projets entrepreneuriaux, startups, business plans, modèles économiques, stratégies de lancement"},

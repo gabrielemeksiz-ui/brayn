@@ -44,6 +44,10 @@ export default function BraynPage() {
   const [youtubeSyncResult, setYoutubeSyncResult] = useState<string | null>(null);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
+  const [showNewCatForm, setShowNewCatForm] = useState(false);
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [newCatEmoji, setNewCatEmoji] = useState('📌');
+  const [newCatColor, setNewCatColor] = useState('#6B7280');
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
@@ -230,6 +234,31 @@ export default function BraynPage() {
     finally { setYoutubeSyncing(false); }
   };
 
+  const createCategory = async () => {
+    if (!newCatLabel.trim()) return;
+    const id = newCatLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        label: newCatLabel,
+        emoji: newCatEmoji,
+        color: newCatColor,
+        description: '',
+        ai_description: '',
+        sort_order: categories.length,
+        is_builtin: false,
+        hidden: false,
+      }),
+    });
+    setNewCatLabel('');
+    setNewCatEmoji('📌');
+    setNewCatColor('#6B7280');
+    setShowNewCatForm(false);
+    await refetchCategories();
+  };
+
   const updateNoteCategories = async (note: Note, newCategories: NoteCategory[]) => {
     const updated = { ...note, categories: newCategories };
     setSelected(updated);
@@ -288,6 +317,12 @@ export default function BraynPage() {
               >
                 Créer une note
               </button>
+              <button
+                onClick={() => { setShowActionMenu(false); setShowNewCatForm(true); }}
+                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A]"
+              >
+                Créer une catégorie
+              </button>
               {isAdmin && (
                 <button
                   onClick={syncYoutube}
@@ -302,6 +337,53 @@ export default function BraynPage() {
 
           {youtubeSyncResult && (
             <p className="text-[11px] text-[#9B9B9B] px-1 mt-1">{youtubeSyncResult}</p>
+          )}
+
+          {showNewCatForm && (
+            <div className="mt-2 space-y-2">
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={newCatEmoji}
+                  onChange={e => setNewCatEmoji(e.target.value)}
+                  className="w-10 bg-[#252525] border border-[#2A2A2A] rounded-[4px] text-center text-[16px] focus:outline-none focus:border-[#2E7CD1]"
+                />
+                <input
+                  type="text"
+                  value={newCatLabel}
+                  onChange={e => setNewCatLabel(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && createCategory()}
+                  placeholder="Nom de la catégorie…"
+                  className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-1.5 flex-wrap px-0.5">
+                {['#3B82F6','#22C55E','#EF4444','#F59E0B','#A855F7','#EC4899','#06B6D4','#F97316','#8B5CF6','#10B981','#6B7280','#1D9BF0'].map(hex => (
+                  <button
+                    key={hex}
+                    onClick={() => setNewCatColor(hex)}
+                    className={`w-5 h-5 rounded-full transition-all ${newCatColor === hex ? 'ring-2 ring-offset-1 ring-offset-[#202020] ring-white scale-110' : 'hover:scale-110'}`}
+                    style={{ backgroundColor: hex }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={createCategory}
+                  disabled={!newCatLabel.trim()}
+                  className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1.5 rounded-[4px] transition-colors duration-100 font-medium disabled:opacity-40"
+                >
+                  Créer
+                </button>
+                <button
+                  onClick={() => { setShowNewCatForm(false); setNewCatLabel(''); setNewCatEmoji('📌'); setNewCatColor('#6B7280'); }}
+                  className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1.5 rounded-[4px] transition-colors duration-100"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
