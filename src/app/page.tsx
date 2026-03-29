@@ -9,6 +9,7 @@ import { useCategories } from '@/lib/hooks/useCategories';
 import type { Note, NoteCategory } from '@/lib/types';
 import { NoteList } from '@/components/NoteList';
 import { NoteDetail } from '@/components/NoteDetail';
+import CategorySettings from '@/components/CategorySettings';
 
 function extractTweetUrls(links: string[], originalText: string): string[] {
   const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/gi;
@@ -100,7 +101,7 @@ export default function BraynPage() {
     if (section === 'new') params.set('seen', 'false');
     if (section === 'recent')
       params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
-    if (section !== 'new' && section !== 'all' && section !== 'recent') {
+    if (section !== 'new' && section !== 'all' && section !== 'recent' && section !== 'settings') {
       params.set('category', section);
     }
     if (search) params.set('q', search);
@@ -318,10 +319,10 @@ export default function BraynPage() {
                 Créer une note
               </button>
               <button
-                onClick={() => { setShowActionMenu(false); setShowNewCatForm(true); }}
+                onClick={() => { setShowActionMenu(false); setSection('settings'); setSelected(null); }}
                 className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A]"
               >
-                Créer une catégorie
+                Gérer les catégories
               </button>
               {isAdmin && (
                 <button
@@ -566,12 +567,19 @@ export default function BraynPage() {
 
         {/* Sidebar footer */}
         <div className="mt-auto px-3 py-3 border-t border-[#2A2A2A] flex items-center gap-2">
-          <a
-            href="/settings"
-            className="flex-1 text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+          <button
+            onClick={() => { setSection('settings'); setSelected(null); }}
+            className={`flex-1 text-left px-2 py-1.5 rounded-[4px] text-[12px] transition-colors duration-100 flex items-center gap-1.5
+              ${section === 'settings'
+                ? 'text-[#2E7CD1] bg-[#2E7CD1]/10'
+                : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
+              }`}
           >
-            Paramètres
-          </a>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Catégories
+          </button>
           <button
             onClick={handleLogout}
             className="px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
@@ -630,8 +638,13 @@ export default function BraynPage() {
           </div>
         </div>
 
-        {/* Contenu — note ouverte ou liste */}
-        {selected ? (
+        {/* Contenu — settings, note ouverte ou liste */}
+        {section === 'settings' ? (
+          <CategorySettings
+            onClose={() => setSection('all')}
+            onCategoriesChanged={() => refetchCategories()}
+          />
+        ) : selected ? (
           <NoteDetail
             note={selected}
             onBack={() => setSelected(null)}

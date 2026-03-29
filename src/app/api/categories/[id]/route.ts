@@ -27,13 +27,32 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  // Remove this category from all notes belonging to the user
-  await supabase.rpc('remove_category_from_notes', {
+  const { data: cat } = await supabase
+    .from('categories')
+    .select('id, is_builtin, user_id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!cat) return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+  if (cat.is_builtin) return NextResponse.json({ error: 'Cannot delete system category' }, { status: 403 });
+
+  const { error: rpcError } = await supabase.rpc('remove_category_from_notes', {
     category_id: id,
     p_user_id: user.id,
   });
 
-  const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', user.id);
+  if (rpcError) {
+    console.error('Error removing category from notes:', rpcError);
+    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+  }
+
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
