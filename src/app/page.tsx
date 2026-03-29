@@ -560,20 +560,23 @@ export default function BraynPage() {
         <div className="mt-auto px-3 py-3 border-t border-[#2A2A2A] flex items-center gap-2">
           <button
             onClick={() => { setSection('settings'); setSelected(null); }}
-            className={`flex-1 text-left px-2 py-1.5 rounded-[4px] text-[12px] transition-colors duration-100 flex items-center gap-1.5
+            className={`text-left px-2 py-1.5 rounded-[4px] text-[12px] transition-colors duration-100 flex items-center gap-1.5
               ${section === 'settings'
                 ? 'text-[#2E7CD1] bg-[#2E7CD1]/10'
                 : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
               }`}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
             Catégories
           </button>
+          <a
+            href="/settings"
+            className="text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+          >
+            Compte
+          </a>
           <button
             onClick={handleLogout}
-            className="px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+            className="ml-auto px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
           >
             Déconnexion
           </button>
