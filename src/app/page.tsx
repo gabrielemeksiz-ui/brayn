@@ -29,7 +29,7 @@ type Section = 'new' | 'all' | 'recent' | string;
 export default function BraynPage() {
   const router = useRouter();
   const { isAdmin, user } = useUser();
-  const { categories, getCatLabel, getCatColor, getCatEmoji, refetch: refetchCategories } = useCategories();
+  const { categories, getCatLabel, getCatColor, refetch: refetchCategories } = useCategories();
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState<Note | null>(null);
   const [section, setSection] = useState<Section>('new');
@@ -47,7 +47,6 @@ export default function BraynPage() {
   const [editingCatName, setEditingCatName] = useState('');
   const [showNewCatForm, setShowNewCatForm] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState('');
-  const [newCatEmoji, setNewCatEmoji] = useState('📌');
   const [newCatColor, setNewCatColor] = useState('#6B7280');
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
@@ -244,7 +243,6 @@ export default function BraynPage() {
       body: JSON.stringify({
         id,
         label: newCatLabel,
-        emoji: newCatEmoji,
         color: newCatColor,
         description: '',
         ai_description: '',
@@ -254,7 +252,6 @@ export default function BraynPage() {
       }),
     });
     setNewCatLabel('');
-    setNewCatEmoji('📌');
     setNewCatColor('#6B7280');
     setShowNewCatForm(false);
     await refetchCategories();
@@ -345,12 +342,6 @@ export default function BraynPage() {
               <div className="flex gap-1.5">
                 <input
                   type="text"
-                  value={newCatEmoji}
-                  onChange={e => setNewCatEmoji(e.target.value)}
-                  className="w-10 bg-[#252525] border border-[#2A2A2A] rounded-[4px] text-center text-[16px] focus:outline-none focus:border-[#2E7CD1]"
-                />
-                <input
-                  type="text"
                   value={newCatLabel}
                   onChange={e => setNewCatLabel(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && createCategory()}
@@ -378,7 +369,7 @@ export default function BraynPage() {
                   Créer
                 </button>
                 <button
-                  onClick={() => { setShowNewCatForm(false); setNewCatLabel(''); setNewCatEmoji('📌'); setNewCatColor('#6B7280'); }}
+                  onClick={() => { setShowNewCatForm(false); setNewCatLabel(''); setNewCatColor('#6B7280'); }}
                   className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1.5 rounded-[4px] transition-colors duration-100"
                 >
                   Annuler
@@ -514,7 +505,7 @@ export default function BraynPage() {
                   >
                     <span className={`text-[8px] opacity-50 transition-transform duration-100 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    {getCatEmoji(cat.id)} {cat.label}
+                    {cat.label}
                   </button>
                   <span className="text-[11px] text-[#606060] pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
                   <div className="hidden group-hover:flex items-center gap-1 pr-1.5">
@@ -631,7 +622,7 @@ export default function BraynPage() {
                     : { backgroundColor: 'transparent', color: `${color}99`, borderColor: `${color}50`, opacity: 0.7 }
                   }
                 >
-                  {getCatEmoji(cat.id)} {getCatLabel(cat.id)}
+                  {getCatLabel(cat.id)}
                 </button>
               );
             })}

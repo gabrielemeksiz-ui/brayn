@@ -31,9 +31,6 @@ export function useCategories() {
   const getCatLabel = (catId: string): string =>
     getCatById(catId)?.label ?? catId;
 
-  const getCatEmoji = (catId: string): string =>
-    getCatById(catId)?.emoji ?? '📌';
-
   const getCatColor = (catId: string): string =>
     getCatById(catId)?.color ?? '#6B7280';
 
@@ -42,7 +39,6 @@ export function useCategories() {
     allCategories: categories,
     isLoading,
     getCatLabel,
-    getCatEmoji,
     getCatColor,
     refetch: fetchCategories,
   };

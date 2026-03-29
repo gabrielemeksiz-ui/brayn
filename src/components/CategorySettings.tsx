@@ -7,7 +7,6 @@ interface Category {
   label: string;
   description: string;
   ai_description: string;
-  emoji: string;
   color: string;
   sort_order: number;
   is_builtin: boolean;
@@ -29,7 +28,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newCat, setNewCat] = useState({ emoji: '📌', color: '#6B7280', label: '', description: '', ai_description: '' });
+  const [newCat, setNewCat] = useState({ color: '#6B7280', label: '', description: '', ai_description: '' });
 
   // Drag state
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -76,15 +75,11 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const getEditValue = (cat: Category, field: keyof Category) => {
-    return editState[cat.id]?.[field] ?? cat[field];
-  };
+  const getEditValue = (cat: Category, field: keyof Category) =>
+    editState[cat.id]?.[field] ?? cat[field];
 
   const setEditField = (catId: string, field: keyof Category, value: string) => {
-    setEditState(prev => ({
-      ...prev,
-      [catId]: { ...prev[catId], [field]: value },
-    }));
+    setEditState(prev => ({ ...prev, [catId]: { ...prev[catId], [field]: value } }));
   };
 
   const handleSave = async (cat: Category) => {
@@ -101,11 +96,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
       if (res.ok) {
         const updated = await res.json();
         setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, ...updated } : c));
-        setEditState(prev => {
-          const next = { ...prev };
-          delete next[cat.id];
-          return next;
-        });
+        setEditState(prev => { const next = { ...prev }; delete next[cat.id]; return next; });
         onCategoriesChanged();
       }
     } catch (err) {
@@ -141,7 +132,6 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
           label: newCat.label,
           description: newCat.description,
           ai_description: newCat.ai_description,
-          emoji: newCat.emoji,
           color: newCat.color,
           is_builtin: false,
           hidden: false,
@@ -149,7 +139,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
         }),
       });
       if (res.ok) {
-        setNewCat({ emoji: '📌', color: '#6B7280', label: '', description: '', ai_description: '' });
+        setNewCat({ color: '#6B7280', label: '', description: '', ai_description: '' });
         setShowNewForm(false);
         fetchData();
         onCategoriesChanged();
@@ -159,9 +149,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
     }
   };
 
-  const handleDragStart = (idx: number) => {
-    setDragIdx(idx);
-  };
+  const handleDragStart = (idx: number) => setDragIdx(idx);
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
@@ -189,9 +177,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
       await fetch('/api/categories/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: withOrder.map(c => ({ id: c.id, sort_order: c.sort_order })),
-        }),
+        body: JSON.stringify({ order: withOrder.map(c => ({ id: c.id, sort_order: c.sort_order })) }),
       });
       onCategoriesChanged();
     } catch (err) {
@@ -204,7 +190,6 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
     return changes && Object.keys(changes).length > 0;
   };
 
-  // --- Global actions ---
   const handleStripAll = async () => {
     setIsStripping(true);
     try {
@@ -234,7 +219,6 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
       });
 
       if (!res.ok || !res.body) {
-        console.error('Reclassify failed:', await res.text());
         setIsReclassifying(false);
         return;
       }
@@ -255,33 +239,16 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
           if (!line.startsWith('data: ')) continue;
           try {
             const event = JSON.parse(line.slice(6));
-
             if (event.type === 'start') {
               setProgress(prev => ({ ...prev, total: event.total }));
             } else if (event.type === 'progress' || event.type === 'skip') {
-              setProgress(prev => ({
-                ...prev,
-                processed: event.processed,
-                preview: event.preview || 'Note vide (ignorée)',
-              }));
+              setProgress(prev => ({ ...prev, processed: event.processed, preview: event.preview || 'Note vide (ignorée)' }));
             } else if (event.type === 'error') {
-              setProgress(prev => ({
-                ...prev,
-                processed: event.processed,
-                errors: prev.errors + 1,
-                preview: '⚠ Erreur sur une note',
-              }));
+              setProgress(prev => ({ ...prev, processed: event.processed, errors: prev.errors + 1, preview: '⚠ Erreur sur une note' }));
             } else if (event.type === 'done') {
-              setProgress({
-                processed: event.processed,
-                total: event.total,
-                errors: event.errors,
-                preview: `${event.processed} notes traitées${event.errors > 0 ? ` (${event.errors} erreurs)` : ''}.`,
-              });
+              setProgress({ processed: event.processed, total: event.total, errors: event.errors, preview: `${event.processed} notes traitées${event.errors > 0 ? ` (${event.errors} erreurs)` : ''}.` });
             }
-          } catch {
-            // ignore parse errors
-          }
+          } catch { /* ignore */ }
         }
       }
 
@@ -429,9 +396,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                 style={{ width: `${Math.round((progress.processed / progress.total) * 100)}%` }}
               />
             </div>
-            <p className="text-[11px] text-[#505050] mt-1.5 truncate">
-              {progress.preview}
-            </p>
+            <p className="text-[11px] text-[#505050] mt-1.5 truncate">{progress.preview}</p>
             {progress.errors > 0 && (
               <p className="text-[11px] text-[#F87171] mt-1">
                 {progress.errors} erreur{progress.errors > 1 ? 's' : ''} rencontrée{progress.errors > 1 ? 's' : ''}
@@ -445,7 +410,6 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
       <div className="space-y-2">
         {categories.map((cat, idx) => {
           const isExpanded = expandedId === cat.id;
-          const isSystem = cat.is_builtin;
           const isDragging = dragIdx === idx;
           const isDragOver = dragOverIdx === idx;
           const count = noteCounts[cat.id] || 0;
@@ -453,7 +417,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
           return (
             <div
               key={cat.id}
-              draggable={!isSystem}
+              draggable
               onDragStart={() => handleDragStart(idx)}
               onDragOver={(e) => handleDragOver(e, idx)}
               onDrop={() => handleDrop(idx)}
@@ -470,29 +434,16 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                 onClick={() => setExpandedId(isExpanded ? null : cat.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left"
               >
-                {!isSystem && (
-                  <span className="text-[#606060] cursor-grab active:cursor-grabbing text-[12px] select-none">
-                    ⠿
-                  </span>
-                )}
-                {isSystem && <span className="w-[16px]" />}
+                <span className="text-[#606060] cursor-grab active:cursor-grabbing text-[12px] select-none">⠿</span>
 
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: String(getEditValue(cat, 'color')) }}
                 />
 
-                <span className="text-[16px] shrink-0">{String(getEditValue(cat, 'emoji'))}</span>
-
                 <span className="text-[14px] font-medium text-[#E8E8E8] flex-1 truncate">
                   {String(getEditValue(cat, 'label'))}
                 </span>
-
-                {isSystem && (
-                  <span className="text-[10px] text-[#606060] bg-[#2A2A2A] px-2 py-0.5 rounded-[4px]">
-                    système
-                  </span>
-                )}
 
                 <span className="text-[11px] text-[#808080] bg-[#252525] px-2 py-0.5 rounded-[4px] tabular-nums">
                   {count} note{count !== 1 ? 's' : ''}
@@ -508,140 +459,93 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
 
               {/* Edit panel */}
               {isExpanded && (
-                <div className="px-4 pb-4 pt-3 border-t border-[#2A2A2A] space-y-4">
-                  {isSystem ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-[60px_60px_1fr] gap-3">
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Emoji</label>
-                          <div className="bg-[#252525] rounded-[6px] h-[36px] flex items-center justify-center text-[18px]">
-                            {cat.emoji}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Couleur</label>
-                          <div
-                            className="rounded-[6px] h-[36px]"
-                            style={{ backgroundColor: cat.color }}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Nom</label>
-                          <div className="bg-[#252525] rounded-[6px] h-[36px] flex items-center px-3 text-[14px] text-[#9B9B9B]">
-                            {cat.label}
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-[#606060] block mb-1">Règles IA</label>
-                        <div className="bg-[#252525] rounded-[6px] p-3 text-[13px] text-[#9B9B9B] leading-relaxed">
-                          {cat.ai_description || 'Aucune règle définie'}
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-[#606060]">
-                        Catégorie système — auto-taggée à l&apos;import. Non modifiable.
-                      </p>
+                <div className="px-4 pb-4 pt-3 border-t border-[#2A2A2A] space-y-3">
+                  <div className="grid grid-cols-[60px_1fr] gap-3">
+                    <div>
+                      <label className="text-[11px] text-[#606060] block mb-1">Couleur</label>
+                      <input
+                        type="color"
+                        value={String(getEditValue(cat, 'color'))}
+                        onChange={e => setEditField(cat.id, 'color', e.target.value)}
+                        className="w-full h-[36px] border-none cursor-pointer bg-transparent rounded-[6px]"
+                      />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-[60px_60px_1fr] gap-3">
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Emoji</label>
-                          <input
-                            value={String(getEditValue(cat, 'emoji'))}
-                            onChange={e => setEditField(cat.id, 'emoji', e.target.value)}
-                            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] text-center text-[18px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Couleur</label>
-                          <input
-                            type="color"
-                            value={String(getEditValue(cat, 'color'))}
-                            onChange={e => setEditField(cat.id, 'color', e.target.value)}
-                            className="w-full h-[36px] border-none cursor-pointer bg-transparent rounded-[6px]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] text-[#606060] block mb-1">Nom</label>
-                          <input
-                            value={String(getEditValue(cat, 'label'))}
-                            onChange={e => setEditField(cat.id, 'label', e.target.value)}
-                            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] text-[#606060] block mb-1">Description (visible par toi)</label>
-                        <input
-                          value={String(getEditValue(cat, 'description'))}
-                          onChange={e => setEditField(cat.id, 'description', e.target.value)}
-                          placeholder="Ce que cette catégorie représente pour toi"
-                          className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] text-[#606060] block mb-1">
-                          Règles de classification IA
-                        </label>
-                        <textarea
-                          value={String(getEditValue(cat, 'ai_description'))}
-                          onChange={e => setEditField(cat.id, 'ai_description', e.target.value)}
-                          rows={3}
-                          placeholder="Décris les types de notes que l'IA doit classer ici. Ex: Blockchain, cryptomonnaies, DeFi, Web3, NFTs..."
-                          className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-y leading-relaxed"
-                        />
-                        <p className="text-[11px] text-[#505050] mt-1">
-                          L&apos;IA utilise ce texte pour décider si une note appartient à cette catégorie. Sois précis : liste les mots-clés, sujets et contextes typiques.
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        {deleteConfirm === cat.id ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[12px] text-[#F87171]">
-                              ⚠ {count} note{count !== 1 ? 's' : ''} {count !== 1 ? 'seront décatégorisées' : 'sera décatégorisée'}. Confirmer ?
-                            </span>
-                            <button
-                              onClick={() => handleDelete(cat)}
-                              className="text-[12px] text-white bg-[#DC2626] hover:bg-[#B91C1C] px-2 py-1 rounded-[4px] transition-colors"
-                            >
-                              Supprimer
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] px-2 py-1"
-                            >
-                              Annuler
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeleteConfirm(cat.id)}
-                            className="text-[12px] text-[#9B9B9B] hover:text-[#F87171] transition-colors"
-                          >
-                            Supprimer cette catégorie
-                          </button>
-                        )}
-
-                        {hasChanges(cat.id) && (
-                          <button
-                            onClick={() => handleSave(cat)}
-                            disabled={saving[cat.id]}
-                            className={`text-[13px] px-4 py-1.5 rounded-[6px] transition-colors duration-100 ${
-                              saving[cat.id]
-                                ? 'bg-[#2A2A2A] text-[#606060]'
-                                : 'bg-[#2E7CD1] hover:bg-[#2568B8] text-white'
-                            }`}
-                          >
-                            {saving[cat.id] ? '✓ Sauvegardé' : 'Sauvegarder'}
-                          </button>
-                        )}
-                      </div>
+                    <div>
+                      <label className="text-[11px] text-[#606060] block mb-1">Nom</label>
+                      <input
+                        value={String(getEditValue(cat, 'label'))}
+                        onChange={e => setEditField(cat.id, 'label', e.target.value)}
+                        className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
+                      />
                     </div>
-                  )}
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-[#606060] block mb-1">Description (visible par toi)</label>
+                    <input
+                      value={String(getEditValue(cat, 'description'))}
+                      onChange={e => setEditField(cat.id, 'description', e.target.value)}
+                      placeholder="Ce que cette catégorie représente pour toi"
+                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-[#606060] block mb-1">Règles de classification IA</label>
+                    <textarea
+                      value={String(getEditValue(cat, 'ai_description'))}
+                      onChange={e => setEditField(cat.id, 'ai_description', e.target.value)}
+                      rows={3}
+                      placeholder="Décris les types de notes que l'IA doit classer ici. Ex: Blockchain, cryptomonnaies, DeFi, Web3, NFTs..."
+                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-y leading-relaxed"
+                    />
+                    <p className="text-[11px] text-[#505050] mt-1">
+                      L&apos;IA utilise ce texte pour décider si une note appartient à cette catégorie.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    {deleteConfirm === cat.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[#F87171]">
+                          ⚠ {count} note{count !== 1 ? 's' : ''} {count !== 1 ? 'seront décatégorisées' : 'sera décatégorisée'}. Confirmer ?
+                        </span>
+                        <button
+                          onClick={() => handleDelete(cat)}
+                          className="text-[12px] text-white bg-[#DC2626] hover:bg-[#B91C1C] px-2 py-1 rounded-[4px] transition-colors"
+                        >
+                          Supprimer
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(null)}
+                          className="text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] px-2 py-1"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirm(cat.id)}
+                        className="text-[12px] text-[#9B9B9B] hover:text-[#F87171] transition-colors"
+                      >
+                        Supprimer cette catégorie
+                      </button>
+                    )}
+
+                    {hasChanges(cat.id) && (
+                      <button
+                        onClick={() => handleSave(cat)}
+                        disabled={saving[cat.id]}
+                        className={`text-[13px] px-4 py-1.5 rounded-[6px] transition-colors duration-100 ${
+                          saving[cat.id]
+                            ? 'bg-[#2A2A2A] text-[#606060]'
+                            : 'bg-[#2E7CD1] hover:bg-[#2568B8] text-white'
+                        }`}
+                      >
+                        {saving[cat.id] ? '✓ Sauvegardé' : 'Sauvegarder'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -654,15 +558,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
         <div className="mt-4 border border-[#2A2A2A] bg-[#1F1F1F] rounded-[8px] p-4 space-y-3">
           <p className="text-[15px] font-medium text-[#E8E8E8]">Nouvelle catégorie</p>
 
-          <div className="grid grid-cols-[60px_60px_1fr] gap-3">
-            <div>
-              <label className="text-[11px] text-[#606060] block mb-1">Emoji</label>
-              <input
-                value={newCat.emoji}
-                onChange={e => setNewCat(prev => ({ ...prev, emoji: e.target.value }))}
-                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] text-center text-[18px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
-              />
-            </div>
+          <div className="grid grid-cols-[60px_1fr] gap-3">
             <div>
               <label className="text-[11px] text-[#606060] block mb-1">Couleur</label>
               <input
@@ -707,7 +603,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
 
           <div className="flex gap-2 justify-end">
             <button
-              onClick={() => { setShowNewForm(false); setNewCat({ emoji: '📌', color: '#6B7280', label: '', description: '', ai_description: '' }); }}
+              onClick={() => { setShowNewForm(false); setNewCat({ color: '#6B7280', label: '', description: '', ai_description: '' }); }}
               className="text-[13px] px-3 py-1.5 text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] rounded-[6px] transition-colors"
             >
               Annuler

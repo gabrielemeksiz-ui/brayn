@@ -29,13 +29,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { data: cat } = await supabase
     .from('categories')
-    .select('id, is_builtin, user_id')
+    .select('id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
 
   if (!cat) return NextResponse.json({ error: 'Category not found' }, { status: 404 });
-  if (cat.is_builtin) return NextResponse.json({ error: 'Cannot delete system category' }, { status: 403 });
 
   const { error: rpcError } = await supabase.rpc('remove_category_from_notes', {
     category_id: id,
