@@ -313,47 +313,73 @@ export function NoteDetail({
 
       {/* Chat IA panel */}
       {showChat && (
-        <div className="h-[320px] shrink-0 border-t border-[#2A2A2A] flex flex-col bg-[#191919]">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#2A2A2A] shrink-0">
+        <div className="h-80 shrink-0 border-t border-[#534344]/15 flex flex-col bg-[#131315]/80 backdrop-blur-xl">
+          {/* Panel header */}
+          <div className="flex items-center justify-between px-4 py-2.5 shrink-0">
             <div className="flex items-center gap-2">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2E7CD1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              <span className="text-[13px] font-medium text-[#D4D4D4]">Chat IA</span>
-              <span className="text-[12px] text-[#606060]">— réfléchissons ensemble</span>
+              <span className="w-2 h-2 rounded-full bg-[#ffcbd0] shadow-[0_0_10px_rgba(255,203,208,0.5)]" />
+              <span className="text-xs font-bold text-[#ffcbd0] uppercase tracking-widest">ASSISTANT IA BRAYN</span>
             </div>
-            <button
-              onClick={() => setShowChat(false)}
-              className="text-[#606060] hover:text-[#D4D4D4] w-5 h-5 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100 text-base leading-none"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {}}
+                className="text-[#d8c1c3]/60 hover:text-[#d8c1c3] w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#2a2a2c] transition-colors duration-100"
+                title="Agrandir"
+              >
+                <span className="material-symbols-outlined" style={{fontSize: '16px'}}>open_in_full</span>
+              </button>
+              <button
+                onClick={() => setShowChat(false)}
+                className="text-[#d8c1c3]/60 hover:text-[#d8c1c3] w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#2a2a2c] transition-colors duration-100"
+                title="Fermer"
+              >
+                <span className="material-symbols-outlined" style={{fontSize: '16px'}}>keyboard_arrow_down</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
             {chatMessages.length === 0 && (
-              <p className="text-[13px] text-[#606060] text-center pt-6">Pose une question sur cette note…</p>
+              <p className="text-[13px] text-[#d8c1c3]/40 text-center pt-6">Pose une question sur cette note…</p>
             )}
             {chatMessages.map(msg => (
-              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[80%] px-3 py-2 rounded-[6px] text-[13px] leading-relaxed whitespace-pre-wrap
-                    ${msg.role === 'user'
-                      ? 'bg-[#2E7CD1] text-white rounded-br-[2px]'
-                      : 'bg-[#252525] text-[#D4D4D4] border border-[#2A2A2A] rounded-bl-[2px]'
-                    }`}
-                >
-                  {msg.content}
+              <div key={msg.id} className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                {msg.role === 'assistant' ? (
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[#571c27]" style={{fontSize: '16px'}}>auto_awesome</span>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-[#353437] flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[#d8c1c3]" style={{fontSize: '16px'}}>person</span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1 max-w-[80%]">
+                  <div
+                    className={`p-4 text-sm leading-relaxed whitespace-pre-wrap text-[#e4e2e4]
+                      ${msg.role === 'assistant'
+                        ? 'bg-[#2a2a2c]/50 rounded-2xl rounded-tl-none'
+                        : 'bg-[#ffcbd0]/10 rounded-2xl rounded-tr-none border border-[#ffcbd0]/10'
+                      }`}
+                  >
+                    {msg.content}
+                  </div>
+                  <span className={`text-[10px] text-[#d8c1c3]/30 uppercase tracking-widest ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                    {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
               </div>
             ))}
             {chatLoading && (
-              <div className="flex justify-start">
-                <div className="bg-[#252525] border border-[#2A2A2A] rounded-[6px] rounded-bl-[2px] px-3 py-2">
+              <div className="flex items-end gap-2 flex-row">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[#571c27]" style={{fontSize: '16px'}}>auto_awesome</span>
+                </div>
+                <div className="bg-[#2a2a2c]/50 p-4 rounded-2xl rounded-tl-none">
                   <span className="flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
-                    <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
-                    <span className="w-1.5 h-1.5 bg-[#606060] rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                    <span className="w-2 h-2 rounded-full bg-[#ffcbd0]/40 animate-bounce" style={{animationDelay: '0ms'}} />
+                    <span className="w-2 h-2 rounded-full bg-[#ffcbd0]/40 animate-bounce" style={{animationDelay: '150ms'}} />
+                    <span className="w-2 h-2 rounded-full bg-[#ffcbd0]/40 animate-bounce" style={{animationDelay: '300ms'}} />
                   </span>
                 </div>
               </div>
@@ -361,7 +387,8 @@ export function NoteDetail({
             <div ref={chatBottomRef} />
           </div>
 
-          <div className="px-4 py-3 border-t border-[#2A2A2A] shrink-0">
+          {/* Input zone */}
+          <div className="px-4 py-3 shrink-0">
             <form
               onSubmit={async e => {
                 e.preventDefault();
@@ -403,24 +430,30 @@ export function NoteDetail({
                   setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
                 }
               }}
-              className="flex gap-2"
+              className="flex gap-2 items-end bg-[#2a2a2c]/60 backdrop-blur-xl p-2 rounded-2xl border border-[#534344]/10 shadow-[0px_20px_40px_rgba(0,0,0,0.4)]"
             >
-              <input
-                type="text"
+              <textarea
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!chatLoading && chatInput.trim()) {
+                      e.currentTarget.form?.requestSubmit();
+                    }
+                  }
+                }}
                 placeholder="Écris ton message…"
                 disabled={chatLoading}
-                className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100 disabled:opacity-50"
+                rows={1}
+                className="flex-1 bg-transparent border-none focus:ring-0 text-[#e4e2e4] placeholder:text-[#d8c1c3]/40 resize-none text-[15px] px-2 py-1.5 focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={chatLoading || !chatInput.trim()}
-                className="bg-[#2E7CD1] hover:bg-[#2568B8] text-white px-3 py-2 rounded-[4px] text-[13px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="bg-[#ffcbd0] text-[#571c27] rounded-xl px-4 py-2 text-sm font-bold flex items-center gap-1.5 hover:opacity-90 transition-opacity duration-100 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
+                <span className="material-symbols-outlined" style={{fontSize: '16px'}}>send</span>
               </button>
             </form>
           </div>
