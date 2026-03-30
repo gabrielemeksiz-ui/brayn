@@ -168,29 +168,24 @@ export function NoteDetail({
               <button
                 onClick={handleClassifyWithAI}
                 disabled={classifying}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] transition-colors duration-100 border bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333] disabled:opacity-40"
+                className="bg-[#353437] text-[#d8c1c3] rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:bg-[#2a2a2c] hover:text-[#e4e2e4] disabled:opacity-40 transition-colors duration-100"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a10 10 0 0 1 10 10"/><circle cx="12" cy="12" r="3"/>
-                </svg>
+                <span className="material-symbols-outlined" style={{fontSize: '14px'}}>sell</span>
                 Classer avec l&apos;IA
               </button>
             )}
 
             <button
               onClick={() => setShowChat(v => !v)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] transition-colors duration-100 border
-                ${showChat
-                  ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
-                  : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
-                }`}
+              className={`transition-colors duration-100 ${showChat
+                ? 'bg-[#ffcbd0]/10 text-[#ffcbd0] border border-[#ffcbd0]/20 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5'
+                : 'bg-[#353437] text-[#d8c1c3] rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:bg-[#2a2a2c]'
+              }`}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
+              <span className="material-symbols-outlined" style={{fontSize: '14px'}}>chat</span>
               Chat IA
               {chatMessages.length > 0 && (
-                <span className="text-[10px] bg-[#2E7CD1] text-white rounded-full px-1.5 py-0.5 font-mono tabular-nums">
+                <span className="text-[10px] bg-[#ffcbd0]/20 text-[#ffcbd0] rounded-full px-1.5 py-0.5 font-mono tabular-nums">
                   {chatMessages.length}
                 </span>
               )}
@@ -198,24 +193,31 @@ export function NoteDetail({
 
             <button
               onClick={() => onDeleteRequest(note.id)}
-              className="text-[#606060] hover:text-red-400 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-red-500/10 transition-colors duration-100"
+              className="bg-red-500/10 text-red-400 rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:bg-red-500/20 transition-colors duration-100"
               title="Supprimer cette note"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-              </svg>
+              <span className="material-symbols-outlined" style={{fontSize: '14px'}}>delete</span>
+              Supprimer
             </button>
 
             <button
               onClick={onBack}
-              className="text-[#606060] hover:text-[#D4D4D4] text-lg leading-none transition-colors duration-100 w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A]"
+              className="bg-[#353437] text-[#d8c1c3] rounded-xl px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:bg-[#2a2a2c] hover:text-[#e4e2e4] transition-colors duration-100"
             >
-              ×
+              <span className="material-symbols-outlined" style={{fontSize: '14px'}}>close</span>
+              Fermer
             </button>
           </div>
 
           {/* Title */}
           <div className="mb-4">
+            {/* Metadata badge */}
+            <div className="mb-3">
+              <span className="bg-[#2a2a2c] text-[#d8c1c3]/60 text-[10px] tracking-widest uppercase px-2 py-1 rounded">
+                {note.source} · {formatDate(note.created_at)}
+              </span>
+            </div>
+
             {editingTitle ? (
               <input
                 ref={titleInputRef}
@@ -226,12 +228,12 @@ export function NoteDetail({
                   if (e.key === 'Enter') { e.preventDefault(); saveTitle(); }
                   if (e.key === 'Escape') setEditingTitle(false);
                 }}
-                className="w-full bg-transparent text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug focus:outline-none border-b border-[#2E7CD1] pb-1"
+                className="w-full bg-transparent text-4xl font-extrabold tracking-tighter text-[#e4e2e4] mb-4 leading-snug focus:outline-none border-b border-[#ffcbd0]/40 pb-1"
                 autoFocus
               />
             ) : (
               <h1
-                className="text-[28px] font-semibold text-[#D4D4D4] mb-4 leading-snug cursor-text hover:text-white transition-colors duration-100"
+                className="text-4xl font-extrabold tracking-tighter text-[#e4e2e4] leading-snug cursor-text hover:text-white transition-colors duration-100"
                 onClick={() => {
                   setEditingTitle(true);
                   setTitleValue(note.original_text ?? '');
@@ -243,25 +245,16 @@ export function NoteDetail({
               </h1>
             )}
 
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-[13px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
-              <span className="text-[#2A2A2A]">·</span>
-              <span className="text-[13px] text-[#9B9B9B] capitalize">{note.source}</span>
-              {note.categories.length > 0 && <span className="text-[#2A2A2A]">·</span>}
+            <div className="flex items-center gap-2 flex-wrap mt-8">
               {note.categories.map(cat => (
                 <span
                   key={cat}
-                  className="text-[12px] px-2 py-[2px] rounded-[4px] border flex items-center gap-1"
-                  style={{
-                    backgroundColor: `${getCatColor(cat)}20`,
-                    color: getCatColor(cat),
-                    borderColor: `${getCatColor(cat)}50`,
-                  }}
+                  className="bg-[#353437] text-[#d8c1c3] text-xs uppercase rounded px-2 py-0.5 flex items-center"
                 >
                   {getCatLabel(cat)}
                   <button
                     onClick={() => updateNoteCategories(note.categories.filter(c => c !== cat) as NoteCategory[])}
-                    className="opacity-50 hover:opacity-100 leading-none"
+                    className="text-[#d8c1c3]/50 hover:text-[#e4e2e4] ml-1 leading-none"
                   >
                     ×
                   </button>
@@ -275,7 +268,7 @@ export function NoteDetail({
                     updateNoteCategories([...note.categories, cat] as NoteCategory[]);
                   }
                 }}
-                className="text-[12px] bg-transparent border border-[#2A2A2A] rounded-[4px] px-2 py-[2px] text-[#9B9B9B] focus:outline-none hover:border-[#333] hover:text-[#D4D4D4] cursor-pointer transition-colors duration-100"
+                className="bg-[#0e0e10] border-none rounded-lg text-xs text-[#d8c1c3] focus:ring-1 focus:ring-[#ffcbd0]/30 focus:outline-none cursor-pointer px-2 py-0.5 transition-colors duration-100"
               >
                 <option value="">+ Catégorie</option>
                 {getAllCategories()
@@ -286,8 +279,6 @@ export function NoteDetail({
               </select>
             </div>
           </div>
-
-          <div className="border-b border-[#2A2A2A] mb-4" />
 
           {/* Tweet Embed */}
           {tweetUrls.length > 0 && (
