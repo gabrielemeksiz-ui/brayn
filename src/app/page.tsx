@@ -269,150 +269,123 @@ export default function BraynPage() {
     });
   };
 
-  const sidebarItem = (label: string, value: Section, badge?: number) => (
-    <button
-      key={value}
-      onClick={() => { setSection(value); setSelected(null); }}
-      className={`w-full text-left px-2 py-[5px] rounded-[4px] text-[14px] transition-colors duration-100 flex items-center justify-between
-        ${section === value
-          ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
-          : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
-        }`}
-    >
-      <span>{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className="bg-[#2E7CD1] text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
+  const sidebarNavItem = (label: string, value: Section, icon: string) => {
+    const isActive = section === value;
+    return (
+      <button
+        key={value}
+        onClick={() => { setSection(value); setSelected(null); }}
+        className={`w-full text-left flex items-center gap-3 py-2 text-sm font-medium transition-colors duration-150 rounded-lg
+          ${isActive
+            ? 'border-l-2 border-[#ffcbd0] pl-3 text-[#ffcbd0] font-semibold'
+            : 'pl-4 text-[#e4e2e4]/60 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
+          }`}
+      >
+        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+        <span>{label}</span>
+      </button>
+    );
+  };
 
   const newCount = getNewNotes().length;
 
   return (
     <div className="h-screen bg-[#191919] text-[#D4D4D4] flex overflow-hidden" style={{fontFamily: "var(--font-inter, 'Inter', system-ui, sans-serif)"}}>
       {/* Sidebar */}
-      <aside className="w-64 bg-[#202020] border-r border-[#2A2A2A] flex flex-col shrink-0 overflow-y-auto">
+      <aside className="w-64 bg-[#1b1b1d] flex flex-col shrink-0 overflow-y-auto">
 
         {/* Header */}
-        <div className="relative px-3 pt-4 pb-2">
-          <div className="flex items-center justify-between px-1 py-1 mb-1">
-            <h1 className="text-[14px] font-medium text-[#D4D4D4]">🧠 Brayn</h1>
-            <button
-              onClick={() => setShowActionMenu(!showActionMenu)}
-              className="text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] w-6 h-6 flex items-center justify-center rounded-[4px] transition-colors duration-100 text-lg leading-none"
-            >
-              +
-            </button>
+        <div className="px-4 pt-5 pb-3">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[#571c27] text-[16px]">terminal</span>
+            </div>
+            <span className="text-[15px] font-bold tracking-tighter text-[#e4e2e4]">Brayn</span>
           </div>
 
-          {showActionMenu && (
-            <div ref={actionMenuRef} className="absolute top-12 right-3 bg-[#252525] border border-[#2A2A2A] rounded-[6px] shadow-xl overflow-hidden z-50 min-w-[160px]">
-              <button
-                onClick={() => { createEmptyNote(); setShowActionMenu(false); }}
-                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap"
-              >
-                Créer une note
-              </button>
-              <button
-                onClick={() => { setShowActionMenu(false); setSection('settings'); setSelected(null); }}
-                className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A]"
-              >
-                Gérer les catégories
-              </button>
-              {isAdmin && (
+          <div className="relative" ref={actionMenuRef}>
+            <button
+              onClick={() => setShowActionMenu(!showActionMenu)}
+              className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] text-[#571c27] font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all duration-150"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Nouvelle Note
+            </button>
+
+            {showActionMenu && (
+              <div className="absolute top-full mt-1 left-0 right-0 bg-[#1f1f21] rounded-xl shadow-[0px_20px_40px_rgba(0,0,0,0.4)] overflow-hidden z-50 border border-[#534344]/15">
                 <button
-                  onClick={syncYoutube}
-                  disabled={youtubeSyncing}
-                  className="w-full text-left px-3 py-2 text-[13px] text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100 whitespace-nowrap border-t border-[#2A2A2A] disabled:opacity-40"
+                  onClick={() => { createEmptyNote(); setShowActionMenu(false); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-[#e4e2e4]/80 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors whitespace-nowrap flex items-center gap-3"
                 >
-                  {youtubeSyncing ? 'Sync en cours…' : 'Sync YouTube'}
+                  <span className="material-symbols-outlined text-[16px]">add_notes</span>
+                  Créer une note
                 </button>
-              )}
-            </div>
-          )}
+                <button
+                  onClick={() => { setShowActionMenu(false); setSection('settings'); setSelected(null); }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-[#e4e2e4]/80 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors whitespace-nowrap flex items-center gap-3"
+                >
+                  <span className="material-symbols-outlined text-[16px]">tune</span>
+                  Gérer les catégories
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={syncYoutube}
+                    disabled={youtubeSyncing}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#e4e2e4]/80 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors whitespace-nowrap flex items-center gap-3 disabled:opacity-40"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">sync</span>
+                    {youtubeSyncing ? 'Sync en cours…' : 'Sync YouTube'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {youtubeSyncResult && (
-            <p className="text-[11px] text-[#9B9B9B] px-1 mt-1">{youtubeSyncResult}</p>
-          )}
-
-          {showNewCatForm && (
-            <div className="mt-2 space-y-2">
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={newCatLabel}
-                  onChange={e => setNewCatLabel(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && createCategory()}
-                  placeholder="Nom de la catégorie…"
-                  className="flex-1 bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-1.5 flex-wrap px-0.5">
-                {['#3B82F6','#22C55E','#EF4444','#F59E0B','#A855F7','#EC4899','#06B6D4','#F97316','#8B5CF6','#10B981','#6B7280','#1D9BF0'].map(hex => (
-                  <button
-                    key={hex}
-                    onClick={() => setNewCatColor(hex)}
-                    className={`w-5 h-5 rounded-full transition-all ${newCatColor === hex ? 'ring-2 ring-offset-1 ring-offset-[#202020] ring-white scale-110' : 'hover:scale-110'}`}
-                    style={{ backgroundColor: hex }}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={createCategory}
-                  disabled={!newCatLabel.trim()}
-                  className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1.5 rounded-[4px] transition-colors duration-100 font-medium disabled:opacity-40"
-                >
-                  Créer
-                </button>
-                <button
-                  onClick={() => { setShowNewCatForm(false); setNewCatLabel(''); setNewCatColor('#6B7280'); }}
-                  className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1.5 rounded-[4px] transition-colors duration-100"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
+            <p className="text-[11px] text-[#e4e2e4]/40 mt-2 px-1">{youtubeSyncResult}</p>
           )}
         </div>
 
-        {/* Nav section */}
-        <div className="px-3 pb-1">
-          <p className="text-[11px] text-[#606060] font-medium uppercase tracking-wider px-1 pt-1 pb-1">Vues</p>
+        {/* Navigation principale */}
+        <nav className="px-2 pb-2">
+          <p className="text-[10px] uppercase tracking-widest text-[#e4e2e4]/30 font-bold px-3 pt-1 pb-2">Navigation</p>
 
-          {/* Expandable "Nouveaux" section */}
+          {/* Nouveaux — avec expand inline */}
           <div>
             <button
-              onClick={() => setExpandNewSection(!expandNewSection)}
-              className={`w-full text-left px-2 py-[5px] rounded-[4px] text-[14px] transition-colors duration-100 flex items-center justify-between
-                ${section === 'new' ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]' : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'}`}
+              onClick={() => { setExpandNewSection(!expandNewSection); setSection('new'); setSelected(null); }}
+              className={`w-full text-left flex items-center gap-3 py-2 text-sm font-medium transition-colors duration-150 rounded-lg
+                ${section === 'new'
+                  ? 'border-l-2 border-[#ffcbd0] pl-3 text-[#ffcbd0] font-semibold'
+                  : 'pl-4 text-[#e4e2e4]/60 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
+                }`}
             >
-              <span className="flex items-center gap-1.5 flex-1">
-                <span className={`text-[8px] transition-transform duration-100 opacity-60 ${expandNewSection ? 'rotate-90' : ''}`}>▶</span>
-                Nouveaux
-              </span>
+              <span className="material-symbols-outlined text-[18px]">add_notes</span>
+              <span className="flex-1">Nouveaux</span>
               {newCount > 0 && (
-                <span className="bg-[#2E7CD1] text-white text-[10px] px-1.5 py-0.5 rounded-full font-mono tabular-nums">
+                <span className="bg-[#ffcbd0] text-[#571c27] text-[9px] px-1.5 py-0.5 rounded-full font-bold tabular-nums mr-1">
                   {newCount}
                 </span>
               )}
+              <span className={`material-symbols-outlined text-[14px] text-[#e4e2e4]/30 mr-1 transition-transform duration-150 ${expandNewSection ? 'rotate-90' : ''}`}>
+                chevron_right
+              </span>
             </button>
+
             {expandNewSection && (
-              <div className="pl-5 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
+              <div className="pl-6 ml-2 border-l border-[#534344]/20 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
                 {getNewNotes().length === 0 ? (
-                  <p className="text-[12px] text-[#606060] py-2 px-2">Aucune note</p>
+                  <p className="text-[11px] text-[#e4e2e4]/30 py-1.5 px-2">Aucune note</p>
                 ) : (
                   getNewNotes().map(note => (
                     <button
                       key={note.id}
                       onClick={() => { setSection('new'); openNote(note); }}
-                      className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate
+                      className={`w-full text-left px-2 py-1 rounded text-xs transition-colors duration-100 truncate
                         ${selected?.id === note.id
-                          ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
-                          : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
+                          ? 'text-[#ffcbd0] font-medium'
+                          : 'text-[#e4e2e4]/50 hover:text-[#e4e2e4]'
                         }`}
                     >
                       {noteTitle(note)}
@@ -423,162 +396,207 @@ export default function BraynPage() {
             )}
           </div>
 
-          {sidebarItem('Tous', 'all')}
-        </div>
+          {sidebarNavItem('Tous', 'all', 'docs')}
+        </nav>
 
-        {/* Categories section */}
-        <div className="px-3 mt-2">
-          <p className="text-[11px] text-[#606060] font-medium uppercase tracking-wider px-1 pt-1 pb-1">Catégories</p>
-        </div>
-        {categories.map(cat => {
-          const isExpanded = expandedCategories.has(cat.id);
-          const categoryNotes = getCategoryNotes(cat.id);
-          const isEditing = editingCatId === cat.id;
-          const color = getCatColor(cat.id);
+        {/* Catégories — style explorateur Obsidian */}
+        <div className="px-2 flex-1">
+          <p className="text-[10px] uppercase tracking-widest text-[#e4e2e4]/30 font-bold px-3 pt-2 pb-2">Fichiers</p>
 
-          const handleSave = async () => {
-            if (!editingCatName.trim()) return;
-            await fetch(`/api/categories/${cat.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ label: editingCatName }),
-            });
-            await refetchCategories();
-            setEditingCatId(null);
-          };
+          {categories.map(cat => {
+            const isExpanded = expandedCategories.has(cat.id);
+            const categoryNotes = getCategoryNotes(cat.id);
+            const isEditing = editingCatId === cat.id;
+            const color = getCatColor(cat.id);
 
-          const handleDelete = async () => {
-            await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
-            await refetchCategories();
-          };
+            const handleSave = async () => {
+              if (!editingCatName.trim()) return;
+              await fetch(`/api/categories/${cat.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label: editingCatName }),
+              });
+              await refetchCategories();
+              setEditingCatId(null);
+            };
 
-          return (
-            <div key={cat.id} className="space-y-1">
-              {isEditing ? (
-                <div className="space-y-1.5 px-2 py-1">
-                  <input
-                    type="text"
-                    value={editingCatName}
-                    onChange={e => setEditingCatName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSave()}
-                    className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1.5 text-[13px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
-                    autoFocus
-                  />
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={handleSave}
-                      className="flex-1 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] py-1 rounded-[4px] transition-colors duration-100"
-                    >
-                      Sauvegarder
-                    </button>
-                    <button
-                      onClick={() => setEditingCatId(null)}
-                      className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-[#9B9B9B] text-[12px] py-1 rounded-[4px] transition-colors duration-100"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className={`group flex items-center rounded-[4px] transition-colors duration-100 ${
-                    dragOverCat === cat.id && draggedNote && dragSourceCat !== cat.id
-                      ? 'bg-[#2E7CD1]/10 outline outline-1 outline-[#2E7CD1]/30'
-                      : 'hover:bg-[#2A2A2A]'
-                  }`}
-                  onDragOver={e => { e.preventDefault(); setDragOverCat(cat.id); }}
-                  onDragLeave={() => setDragOverCat(null)}
-                  onDrop={e => {
-                    e.preventDefault();
-                    setDragOverCat(null);
-                    if (!draggedNote || dragSourceCat === cat.id) return;
-                    const newCats = (draggedNote.categories as string[]).filter(c => c !== dragSourceCat);
-                    if (!newCats.includes(cat.id)) newCats.push(cat.id);
-                    updateNoteCategories(draggedNote, newCats as NoteCategory[]);
-                    setDraggedNote(null);
-                    setDragSourceCat(null);
-                  }}
-                >
-                  <button
-                    onClick={() => toggleCategoryExpand(cat.id)}
-                    className="flex-1 text-left px-2 py-[5px] text-[14px] flex items-center gap-1.5 text-[#9B9B9B] group-hover:text-[#D4D4D4] transition-colors duration-100"
-                  >
-                    <span className={`text-[8px] opacity-50 transition-transform duration-100 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                    {cat.label}
-                  </button>
-                  <span className="text-[11px] text-[#606060] pr-2 group-hover:hidden tabular-nums">{categoryNotes.length}</span>
-                  <div className="hidden group-hover:flex items-center gap-1 pr-1.5">
-                    <button
-                      onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.label); }}
-                      className="text-[#909090] hover:text-[#D4D4D4] text-sm w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-[#2A2A2A] transition-colors duration-100"
-                      title="Renommer"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="text-[#909090] hover:text-red-400 text-sm w-6 h-6 flex items-center justify-center rounded-[4px] hover:bg-red-500/10 transition-colors duration-100"
-                      title="Supprimer"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              )}
-              {isExpanded && !isEditing && (
-                <div className="pl-5 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
-                  {categoryNotes.length === 0 ? (
-                    <p className="text-[12px] text-[#606060] py-2 px-2">Aucune note</p>
-                  ) : (
-                    categoryNotes.map(note => (
-                      <button
-                        key={note.id}
-                        draggable
-                        onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat.id); }}
-                        onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
-                        onClick={() => { setSection(cat.id as Section); openNote(note); }}
-                        className={`w-full text-left px-2 py-[4px] rounded-[4px] text-[13px] transition-colors duration-100 truncate cursor-grab active:cursor-grabbing
-                          ${draggedNote?.id === note.id
-                            ? 'opacity-30'
-                            : selected?.id === note.id
-                            ? 'bg-[#2E7CD1]/15 text-[#2E7CD1]'
-                            : 'text-[#C8C8C8] hover:text-white hover:bg-[#2A2A2A]'
-                          }`}
-                      >
-                        {noteTitle(note)}
+            const handleDelete = async () => {
+              await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
+              await refetchCategories();
+            };
+
+            return (
+              <div key={cat.id}>
+                {isEditing ? (
+                  <div className="space-y-1.5 px-2 py-1.5">
+                    <input
+                      type="text"
+                      value={editingCatName}
+                      onChange={e => setEditingCatName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSave()}
+                      className="w-full bg-[#0e0e10] border-none rounded-lg px-3 py-1.5 text-sm text-[#e4e2e4] focus:outline-none focus:ring-1 focus:ring-[#ffcbd0]/40"
+                      autoFocus
+                    />
+                    <div className="flex gap-1.5">
+                      <button onClick={handleSave} className="flex-1 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] text-[#571c27] text-xs py-1.5 rounded-lg font-semibold">
+                        Sauvegarder
                       </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                      <button onClick={() => setEditingCatId(null)} className="flex-1 bg-[#353437]/50 text-[#e4e2e4]/60 text-xs py-1.5 rounded-lg">
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`group flex items-center rounded-lg transition-colors duration-150 ${
+                      dragOverCat === cat.id && draggedNote && dragSourceCat !== cat.id
+                        ? 'bg-[#ffcbd0]/10'
+                        : 'hover:bg-[#353437]/50'
+                    }`}
+                    onDragOver={e => { e.preventDefault(); setDragOverCat(cat.id); }}
+                    onDragLeave={() => setDragOverCat(null)}
+                    onDrop={e => {
+                      e.preventDefault();
+                      setDragOverCat(null);
+                      if (!draggedNote || dragSourceCat === cat.id) return;
+                      const newCats = (draggedNote.categories as string[]).filter(c => c !== dragSourceCat);
+                      if (!newCats.includes(cat.id)) newCats.push(cat.id);
+                      updateNoteCategories(draggedNote, newCats as NoteCategory[]);
+                      setDraggedNote(null);
+                      setDragSourceCat(null);
+                    }}
+                  >
+                    <button
+                      onClick={() => toggleCategoryExpand(cat.id)}
+                      className="flex-1 text-left px-2 py-1.5 flex items-center gap-2"
+                    >
+                      <span className={`material-symbols-outlined text-[14px] text-[#e4e2e4]/30 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}>
+                        chevron_right
+                      </span>
+                      <span className="material-symbols-outlined text-[16px]" style={{ color }}>
+                        {isExpanded ? 'folder_open' : 'folder'}
+                      </span>
+                      <span className={`text-sm truncate transition-colors duration-100 ${isExpanded ? 'text-[#e4e2e4] font-medium' : 'text-[#e4e2e4]/60'}`}>
+                        {cat.label}
+                      </span>
+                    </button>
+                    <span className="text-[10px] text-[#555] pr-2 group-hover:hidden font-mono tabular-nums">{categoryNotes.length}</span>
+                    <div className="hidden group-hover:flex items-center gap-1 pr-1.5">
+                      <button
+                        onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.label); }}
+                        className="text-[#e4e2e4]/30 hover:text-[#e4e2e4] w-6 h-6 flex items-center justify-center rounded-lg hover:bg-[#353437] transition-colors"
+                        title="Renommer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="text-[#e4e2e4]/30 hover:text-red-400 w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-500/10 transition-colors"
+                        title="Supprimer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-        {/* Sidebar footer */}
-        <div className="mt-auto px-3 py-3 border-t border-[#2A2A2A] flex items-center gap-2">
+                {isExpanded && !isEditing && (
+                  <div className="pl-8 ml-1 border-l border-[#534344]/20 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
+                    {categoryNotes.length === 0 ? (
+                      <p className="text-[11px] text-[#e4e2e4]/30 py-1.5 px-2">Aucune note</p>
+                    ) : (
+                      categoryNotes.map(note => (
+                        <button
+                          key={note.id}
+                          draggable
+                          onDragStart={() => { setDraggedNote(note); setDragSourceCat(cat.id); }}
+                          onDragEnd={() => { setDraggedNote(null); setDragSourceCat(null); setDragOverCat(null); }}
+                          onClick={() => { setSection(cat.id as Section); openNote(note); }}
+                          className={`w-full text-left px-2 py-1 rounded text-xs transition-colors duration-100 truncate cursor-grab active:cursor-grabbing
+                            ${draggedNote?.id === note.id ? 'opacity-30' :
+                              selected?.id === note.id ? 'text-[#ffcbd0] font-medium' :
+                              'text-[#e4e2e4]/50 hover:text-[#e4e2e4]'
+                            }`}
+                        >
+                          {noteTitle(note)}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Formulaire nouvelle catégorie */}
+          {showNewCatForm && (
+            <div className="mt-2 space-y-2 px-2">
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={newCatLabel}
+                  onChange={e => setNewCatLabel(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && createCategory()}
+                  placeholder="Nom de la catégorie…"
+                  className="flex-1 bg-[#0e0e10] border-none rounded-lg px-3 py-1.5 text-sm text-[#e4e2e4] placeholder-[#e4e2e4]/30 focus:outline-none focus:ring-1 focus:ring-[#ffcbd0]/40"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-1.5 flex-wrap px-0.5">
+                {['#3B82F6','#22C55E','#EF4444','#F59E0B','#A855F7','#EC4899','#06B6D4','#F97316','#8B5CF6','#10B981','#6B7280','#1D9BF0'].map(hex => (
+                  <button
+                    key={hex}
+                    onClick={() => setNewCatColor(hex)}
+                    className={`w-5 h-5 rounded-full transition-all ${newCatColor === hex ? 'ring-2 ring-offset-1 ring-offset-[#1b1b1d] ring-white scale-110' : 'hover:scale-110'}`}
+                    style={{ backgroundColor: hex }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={createCategory}
+                  disabled={!newCatLabel.trim()}
+                  className="flex-1 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] text-[#571c27] text-xs py-1.5 rounded-lg font-semibold disabled:opacity-40"
+                >
+                  Créer
+                </button>
+                <button
+                  onClick={() => { setShowNewCatForm(false); setNewCatLabel(''); setNewCatColor('#6B7280'); }}
+                  className="flex-1 bg-[#353437]/50 text-[#e4e2e4]/60 text-xs py-1.5 rounded-lg"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer sidebar */}
+        <div className="mt-auto px-2 py-3 flex items-center gap-1">
           <button
             onClick={() => { setSection('settings'); setSelected(null); }}
-            className={`text-left px-2 py-1.5 rounded-[4px] text-[12px] transition-colors duration-100 flex items-center gap-1.5
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors duration-150
               ${section === 'settings'
-                ? 'text-[#2E7CD1] bg-[#2E7CD1]/10'
-                : 'text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A]'
+                ? 'text-[#ffcbd0] bg-[#ffcbd0]/10'
+                : 'text-[#e4e2e4]/40 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
               }`}
           >
+            <span className="material-symbols-outlined text-[16px]">tune</span>
             Catégories
           </button>
           <a
             href="/settings"
-            className="text-left px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-[#e4e2e4]/40 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors duration-150"
           >
+            <span className="material-symbols-outlined text-[16px]">person</span>
             Compte
           </a>
           <button
             onClick={handleLogout}
-            className="ml-auto px-2 py-1.5 rounded-[4px] text-[12px] text-[#9B9B9B] hover:text-[#D4D4D4] hover:bg-[#2A2A2A] transition-colors duration-100"
+            className="ml-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-[#e4e2e4]/40 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors duration-150"
+            title="Déconnexion"
           >
-            Déconnexion
+            <span className="material-symbols-outlined text-[16px]">logout</span>
           </button>
         </div>
       </aside>
