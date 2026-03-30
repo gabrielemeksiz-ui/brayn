@@ -277,7 +277,7 @@ export default function BraynPage() {
         onClick={() => { setSection(value); setSelected(null); }}
         className={`w-full text-left flex items-center gap-3 py-2 text-sm font-medium transition-colors duration-150 rounded-lg
           ${isActive
-            ? 'border-l-2 border-[#ffcbd0] pl-3 text-[#ffcbd0] font-semibold'
+            ? 'pl-4 bg-[#ffcbd0]/15 text-[#ffcbd0] font-semibold'
             : 'pl-4 text-[#e4e2e4]/60 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
           }`}
       >
@@ -292,7 +292,7 @@ export default function BraynPage() {
   return (
     <div className="h-screen bg-[#191919] text-[#D4D4D4] flex overflow-hidden" style={{fontFamily: "var(--font-inter, 'Inter', system-ui, sans-serif)"}}>
       {/* Sidebar */}
-      <aside className="w-64 bg-[#1b1b1d] flex flex-col shrink-0 overflow-y-auto">
+      <aside className="w-64 bg-[#1b1b1d] flex flex-col shrink-0 h-full">
 
         {/* Header */}
         <div className="px-4 pt-5 pb-3">
@@ -357,7 +357,7 @@ export default function BraynPage() {
               onClick={() => { setExpandNewSection(!expandNewSection); setSection('new'); setSelected(null); }}
               className={`w-full text-left flex items-center gap-3 py-2 text-sm font-medium transition-colors duration-150 rounded-lg
                 ${section === 'new'
-                  ? 'border-l-2 border-[#ffcbd0] pl-3 text-[#ffcbd0] font-semibold'
+                  ? 'pl-4 bg-[#ffcbd0]/15 text-[#ffcbd0] font-semibold'
                   : 'pl-4 text-[#e4e2e4]/60 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
                 }`}
             >
@@ -374,7 +374,7 @@ export default function BraynPage() {
             </button>
 
             {expandNewSection && (
-              <div className="pl-6 ml-2 border-l border-[#534344]/20 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
+              <div className="pl-6 ml-2 border-l border-[#534344]/20 space-y-0.5 mt-0.5">
                 {getNewNotes().length === 0 ? (
                   <p className="text-[11px] text-[#e4e2e4]/30 py-1.5 px-2">Aucune note</p>
                 ) : (
@@ -400,7 +400,7 @@ export default function BraynPage() {
         </nav>
 
         {/* Catégories — style explorateur Obsidian */}
-        <div className="px-2 flex-1">
+        <div className="px-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <p className="text-[10px] uppercase tracking-widest text-[#e4e2e4]/30 font-bold px-3 pt-2 pb-2">Fichiers</p>
 
           {categories.map(cat => {
@@ -501,7 +501,7 @@ export default function BraynPage() {
                 )}
 
                 {isExpanded && !isEditing && (
-                  <div className="pl-8 ml-1 border-l border-[#534344]/20 space-y-0.5 mt-0.5 max-h-48 overflow-y-auto">
+                  <div className="pl-8 ml-1 border-l border-[#534344]/20 space-y-0.5 mt-0.5">
                     {categoryNotes.length === 0 ? (
                       <p className="text-[11px] text-[#e4e2e4]/30 py-1.5 px-2">Aucune note</p>
                     ) : (
@@ -572,7 +572,7 @@ export default function BraynPage() {
         </div>
 
         {/* Footer sidebar */}
-        <div className="mt-auto px-2 py-3 flex items-center gap-1">
+        <div className="shrink-0 px-2 py-3 flex items-center gap-1">
           <button
             onClick={() => { setSection('settings'); setSelected(null); }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors duration-150
@@ -591,13 +591,6 @@ export default function BraynPage() {
             <span className="material-symbols-outlined text-[16px]">person</span>
             Compte
           </a>
-          <button
-            onClick={handleLogout}
-            className="ml-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-[#e4e2e4]/40 hover:text-[#e4e2e4] hover:bg-[#353437]/50 transition-colors duration-150"
-            title="Déconnexion"
-          >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
-          </button>
         </div>
       </aside>
 

@@ -282,7 +282,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowNewForm(true)}
-            className="text-[13px] px-3 py-1.5 bg-[#2E7CD1] hover:bg-[#2568B8] text-white rounded-[6px] transition-colors duration-100"
+            className="text-[13px] px-3 py-1.5 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] rounded-[6px] transition-colors duration-100"
           >
             + Nouvelle catégorie
           </button>
@@ -348,7 +348,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                 onClick={() => setReclassifyMode('all')}
                 className={`flex-1 text-[12px] py-2 px-3 rounded-l-[6px] border transition-colors ${
                   reclassifyMode === 'all'
-                    ? 'bg-[#2E7CD1]/15 text-[#2E7CD1] border-[#2E7CD1]/40'
+                    ? 'bg-[#ffcbd0]/15 text-[#ffcbd0] border-[#ffcbd0]/40'
                     : 'text-[#9B9B9B] border-[#2A2A2A] hover:bg-[#2A2A2A]'
                 }`}
               >
@@ -358,7 +358,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                 onClick={() => setReclassifyMode('uncategorized')}
                 className={`flex-1 text-[12px] py-2 px-3 rounded-r-[6px] border border-l-0 transition-colors ${
                   reclassifyMode === 'uncategorized'
-                    ? 'bg-[#2E7CD1]/15 text-[#2E7CD1] border-[#2E7CD1]/40'
+                    ? 'bg-[#ffcbd0]/15 text-[#ffcbd0] border-[#ffcbd0]/40'
                     : 'text-[#9B9B9B] border-[#2A2A2A] hover:bg-[#2A2A2A]'
                 }`}
               >
@@ -368,7 +368,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
             <button
               onClick={handleReclassify}
               disabled={isReclassifying}
-              className="w-full text-[13px] py-2 px-3 bg-[#2E7CD1]/15 text-[#2E7CD1] border border-[#2E7CD1]/30 hover:bg-[#2E7CD1]/25 rounded-[6px] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full text-[13px] py-2 px-3 bg-[#ffcbd0]/10 text-[#ffcbd0] border border-[#ffcbd0]/30 hover:bg-[#ffcbd0]/20 rounded-[6px] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
               {isReclassifying ? 'Reclassification en cours…' : "Reclassifier avec l'IA"}
@@ -386,13 +386,13 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
               <span className="text-[13px] text-[#D4D4D4]">
                 {progress.processed >= progress.total ? 'Terminé !' : 'Reclassification en cours…'}
               </span>
-              <span className="text-[13px] font-medium text-[#2E7CD1] tabular-nums">
+              <span className="text-[13px] font-medium text-[#ffcbd0] tabular-nums">
                 {progress.processed} / {progress.total}
               </span>
             </div>
             <div className="w-full h-[6px] bg-[#252525] rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#2E7CD1] rounded-full transition-all duration-300"
+                className="h-full bg-[#ffcbd0] rounded-full transition-all duration-300"
                 style={{ width: `${Math.round((progress.processed / progress.total) * 100)}%` }}
               />
             </div>
@@ -425,7 +425,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
               className={`
                 border rounded-[8px] transition-all duration-150
                 ${isDragging ? 'opacity-30' : ''}
-                ${isDragOver ? 'border-[#2E7CD1] bg-[#2E7CD1]/5' : 'border-[#2A2A2A] bg-[#1F1F1F]'}
+                ${isDragOver ? 'border-[#ffcbd0]/40 bg-[#ffcbd0]/5' : 'border-[#2A2A2A] bg-[#1F1F1F]'}
                 ${isExpanded ? 'border-[#333]' : 'hover:border-[#333]'}
               `}
             >
@@ -475,7 +475,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                       <input
                         value={String(getEditValue(cat, 'label'))}
                         onChange={e => setEditField(cat.id, 'label', e.target.value)}
-                        className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
+                        className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#ffcbd0]/40"
                       />
                     </div>
                   </div>
@@ -486,7 +486,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                       value={String(getEditValue(cat, 'description'))}
                       onChange={e => setEditField(cat.id, 'description', e.target.value)}
                       placeholder="Ce que cette catégorie représente pour toi"
-                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
+                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/40"
                     />
                   </div>
 
@@ -497,7 +497,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                       onChange={e => setEditField(cat.id, 'ai_description', e.target.value)}
                       rows={3}
                       placeholder="Décris les types de notes que l'IA doit classer ici. Ex: Blockchain, cryptomonnaies, DeFi, Web3, NFTs..."
-                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-y leading-relaxed"
+                      className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/40 resize-y leading-relaxed"
                     />
                     <p className="text-[11px] text-[#505050] mt-1">
                       L&apos;IA utilise ce texte pour décider si une note appartient à cette catégorie.
@@ -539,7 +539,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                         className={`text-[13px] px-4 py-1.5 rounded-[6px] transition-colors duration-100 ${
                           saving[cat.id]
                             ? 'bg-[#2A2A2A] text-[#606060]'
-                            : 'bg-[#2E7CD1] hover:bg-[#2568B8] text-white'
+                            : 'bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27]'
                         }`}
                       >
                         {saving[cat.id] ? '✓ Sauvegardé' : 'Sauvegarder'}
@@ -574,7 +574,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
                 value={newCat.label}
                 onChange={e => setNewCat(prev => ({ ...prev, label: e.target.value }))}
                 placeholder="Ex: Crypto / Web3"
-                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
+                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/40"
                 autoFocus
               />
             </div>
@@ -586,7 +586,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
               value={newCat.description}
               onChange={e => setNewCat(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Ce que cette catégorie représente pour toi"
-              className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1]"
+              className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] h-[36px] px-3 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/40"
             />
           </div>
 
@@ -597,7 +597,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
               onChange={e => setNewCat(prev => ({ ...prev, ai_description: e.target.value }))}
               rows={3}
               placeholder="Décris les types de notes que l'IA doit classer ici. Sois précis : mots-clés, sujets, contextes…"
-              className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] resize-y leading-relaxed"
+              className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/40 resize-y leading-relaxed"
             />
           </div>
 
@@ -610,7 +610,7 @@ export default function CategorySettings({ onClose, onCategoriesChanged }: Categ
             </button>
             <button
               onClick={handleCreate}
-              className="text-[13px] px-4 py-1.5 bg-[#2E7CD1] hover:bg-[#2568B8] text-white rounded-[6px] transition-colors"
+              className="text-[13px] px-4 py-1.5 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] rounded-[6px] transition-colors"
             >
               Créer
             </button>

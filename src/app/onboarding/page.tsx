@@ -92,7 +92,7 @@ export default function OnboardingPage() {
   if (checkingAuth) {
     return (
       <div className="h-screen bg-[#191919] flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-[#2E7CD1] border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-[#ffcbd0]/50 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -226,15 +226,15 @@ export default function OnboardingPage() {
             <div key={s} className="flex items-center gap-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium transition-all duration-200 ${
-                  s < step ? 'bg-[#2E7CD1] text-white' :
-                  s === step ? 'bg-[#2E7CD1]/20 border-2 border-[#2E7CD1] text-[#2E7CD1]' :
+                  s < step ? 'bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] text-[#571c27]' :
+                  s === step ? 'bg-[#ffcbd0]/15 border-2 border-[#ffcbd0]/50 text-[#ffcbd0]' :
                   'bg-[#252525] border border-[#2A2A2A] text-[#606060]'
                 }`}
               >
                 {s < step ? '✓' : s}
               </div>
               {s < 3 && (
-                <div className={`w-16 h-px ${s < step ? 'bg-[#2E7CD1]' : 'bg-[#2A2A2A]'}`} />
+                <div className={`w-16 h-px ${s < step ? 'bg-[#ffcbd0]' : 'bg-[#2A2A2A]'}`} />
               )}
             </div>
           ))}
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
                   onClick={() => setSelectedProfile(t.id)}
                   className={`p-4 rounded-[8px] border text-left transition-all duration-150 ${
                     selectedProfile === t.id
-                      ? 'border-[#2E7CD1] bg-[#2E7CD1]/10'
+                      ? 'border-[#ffcbd0]/50 bg-[#ffcbd0]/10'
                       : 'border-[#2A2A2A] bg-[#252525] hover:border-[#333]'
                   }`}
                 >
@@ -276,7 +276,7 @@ export default function OnboardingPage() {
                     onClick={() => toggleInterest(interest)}
                     className={`px-3 py-1.5 rounded-full text-[13px] border transition-all duration-150 ${
                       selectedInterests.includes(interest)
-                        ? 'border-[#2E7CD1] bg-[#2E7CD1]/15 text-[#2E7CD1]'
+                        ? 'border-[#ffcbd0]/50 bg-[#ffcbd0]/15 text-[#ffcbd0]'
                         : 'border-[#2A2A2A] text-[#9B9B9B] hover:border-[#333] hover:text-[#D4D4D4]'
                     }`}
                   >
@@ -289,7 +289,7 @@ export default function OnboardingPage() {
             <button
               onClick={goToStep2}
               disabled={!selectedProfile || selectedInterests.length < 2}
-              className="w-full py-3 rounded-[8px] bg-[#2E7CD1] hover:bg-[#2568B8] text-white font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-[8px] bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Suivant →
             </button>
@@ -315,7 +315,7 @@ export default function OnboardingPage() {
                   <button
                     onClick={() => toggleCategory(cat.id)}
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
-                      cat.enabled ? 'bg-[#2E7CD1] border-[#2E7CD1]' : 'border-[#444] bg-transparent'
+                      cat.enabled ? 'bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] border-[#ffcbd0]/50' : 'border-[#444] bg-transparent'
                     }`}
                   >
                     {cat.enabled && <span className="text-white text-[10px]">✓</span>}
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-medium text-[#D4D4D4]">{cat.label}</span>
                       {cat.isAiSuggestion && (
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[#2E7CD1]/15 text-[#2E7CD1] border border-[#2E7CD1]/30">
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[#ffcbd0]/15 text-[#ffcbd0] border border-[#ffcbd0]/50/30">
                           ✨ IA
                         </span>
                       )}
@@ -348,7 +348,7 @@ export default function OnboardingPage() {
             >
               {isGenerating ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-[#2E7CD1] border-t-transparent rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-[#ffcbd0]/50 border-t-transparent rounded-full animate-spin" />
                   L&apos;IA analyse tes intérêts…
                 </>
               ) : (
@@ -366,7 +366,7 @@ export default function OnboardingPage() {
               <button
                 onClick={goToStep3}
                 disabled={editableCategories.filter(c => c.enabled).length === 0}
-                className="flex-1 py-3 rounded-[8px] bg-[#2E7CD1] hover:bg-[#2568B8] text-white font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 py-3 rounded-[8px] bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Suivant →
               </button>
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
                       type="text"
                       value={cat.label}
                       onChange={e => updateFinalCat(cat.id, { label: e.target.value })}
-                      className="flex-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1]"
+                      className="flex-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#ffcbd0]/50"
                     />
 
                     {/* Delete */}
@@ -447,7 +447,7 @@ export default function OnboardingPage() {
 
             {/* Add category form */}
             {showAddForm ? (
-              <div className="p-4 rounded-[8px] border border-[#2E7CD1]/30 bg-[#252525] space-y-3">
+              <div className="p-4 rounded-[8px] border border-[#ffcbd0]/50/30 bg-[#252525] space-y-3">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
@@ -464,7 +464,7 @@ export default function OnboardingPage() {
                     value={newCatLabel}
                     onChange={e => setNewCatLabel(e.target.value)}
                     placeholder="Nom de la catégorie…"
-                    className="flex-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1] placeholder-[#606060]"
+                    className="flex-1 bg-[#1E1E1E] border border-[#2A2A2A] rounded-[6px] px-3 py-2 text-[14px] text-[#D4D4D4] focus:outline-none focus:border-[#ffcbd0]/50 placeholder-[#606060]"
                     autoFocus
                   />
                 </div>
@@ -484,7 +484,7 @@ export default function OnboardingPage() {
                   <button
                     onClick={addNewCategory}
                     disabled={!newCatLabel.trim()}
-                    className="flex-1 py-2 rounded-[6px] bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[13px] font-medium transition-colors duration-150 disabled:opacity-40"
+                    className="flex-1 py-2 rounded-[6px] bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] text-[13px] font-medium transition-colors duration-150 disabled:opacity-40"
                   >
                     Ajouter
                   </button>
@@ -515,7 +515,7 @@ export default function OnboardingPage() {
               <button
                 onClick={completeOnboarding}
                 disabled={isSubmitting || finalCategories.length === 0}
-                className="flex-1 py-3 rounded-[8px] bg-[#2E7CD1] hover:bg-[#2568B8] text-white font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-[8px] bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] font-medium text-[15px] transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

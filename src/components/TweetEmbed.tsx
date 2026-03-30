@@ -39,7 +39,7 @@ export function TweetEmbed({ url, onData }: TweetEmbedProps) {
   if (!data) {
     return (
       <div className="flex items-center gap-2 py-1">
-        <div className="w-3 h-3 rounded-full border-2 border-[#444] border-t-[#2E7CD1] animate-spin shrink-0" />
+        <div className="w-3 h-3 rounded-full border-2 border-[#444] border-t-[#ffcbd0] animate-spin shrink-0" />
         <span className="text-[12px] text-[#606060]">Chargement du tweet…</span>
       </div>
     );

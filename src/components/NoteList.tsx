@@ -109,10 +109,10 @@ export function NoteList({
                 <div
                   key={note.id}
                   onClick={() => selectMode ? toggleId(note.id) : onSelect(note)}
-                  className={`group flex items-start gap-3 w-full text-left p-6 rounded-xl transition-all duration-150 cursor-pointer
+                  className={`group flex items-start gap-3 w-full text-left p-6 rounded-xl transition-all duration-150 cursor-pointer border
                     ${isChecked
-                      ? 'bg-red-500/10'
-                      : 'hover:bg-[#1b1b1d]'
+                      ? 'bg-red-500/10 border-red-500/20'
+                      : 'bg-[#1b1b1d] border-[#2a2a2c] hover:border-[#ffcbd0]/20 hover:bg-[#1f1f21]'
                     }`}
                 >
                   {selectMode && (

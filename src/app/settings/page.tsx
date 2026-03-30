@@ -144,7 +144,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-[13px] text-[#D4D4D4]">{email ?? '—'}</p>
               <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                isAdmin ? 'bg-[#2E7CD1]/20 text-[#2E7CD1]' : 'bg-[#2A2A2A] text-[#9B9B9B]'
+                isAdmin ? 'bg-[#ffcbd0]/15 text-[#ffcbd0]' : 'bg-[#2A2A2A] text-[#9B9B9B]'
               }`}>
                 {isAdmin ? 'Admin' : 'Invité'}
               </span>
@@ -181,7 +181,7 @@ export default function SettingsPage() {
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[6px] px-4 py-3">
                 <p className="text-[13px] text-emerald-300 font-medium">✓ Bot configuré et actif</p>
                 <p className="text-[12px] text-[#9B9B9B] mt-0.5">
-                  Ouvre <a href={`https://t.me/${botStatus.bot_username}`} target="_blank" rel="noopener noreferrer" className="text-[#2E7CD1] hover:underline">@{botStatus.bot_username}</a> dans Telegram et envoie n'importe quel message pour créer une note.
+                  Ouvre <a href={`https://t.me/${botStatus.bot_username}`} target="_blank" rel="noopener noreferrer" className="text-[#ffcbd0] hover:underline">@{botStatus.bot_username}</a> dans Telegram et envoie n'importe quel message pour créer une note.
                 </p>
               </div>
               <button
@@ -205,12 +205,12 @@ export default function SettingsPage() {
                   href="https://t.me/BotFather"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 mt-2 px-3 py-2 bg-[#2E7CD1]/10 border border-[#2E7CD1]/30 rounded-[6px] text-[13px] text-[#2E7CD1] hover:bg-[#2E7CD1]/20 transition-colors duration-100"
+                  className="inline-flex items-center gap-2 mt-2 px-3 py-2 bg-[#ffcbd0]/10 border border-[#ffcbd0]/30 rounded-[6px] text-[13px] text-[#ffcbd0] hover:bg-[#ffcbd0]/20 transition-colors duration-100"
                 >
                   Ouvrir @BotFather →
                 </a>
                 <p className="text-[12px] text-[#606060] mt-2">
-                  Si Telegram n&apos;est pas installé, télécharge-le d&apos;abord sur <a href="https://telegram.org/apps" target="_blank" rel="noopener noreferrer" className="text-[#2E7CD1] hover:underline">telegram.org</a>.
+                  Si Telegram n&apos;est pas installé, télécharge-le d&apos;abord sur <a href="https://telegram.org/apps" target="_blank" rel="noopener noreferrer" className="text-[#ffcbd0] hover:underline">telegram.org</a>.
                 </p>
               </Step>
 
@@ -252,12 +252,12 @@ export default function SettingsPage() {
                     value={tokenInput}
                     onChange={e => { setTokenInput(e.target.value); setSaveError(null); }}
                     placeholder="1234567890:ABCdef…"
-                    className="flex-1 bg-[#252525] border border-[#2A2A2A] focus:border-[#2E7CD1] rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none transition-colors duration-100 font-mono"
+                    className="flex-1 bg-[#252525] border border-[#2A2A2A] focus:border-[#ffcbd0]/50 rounded-[6px] px-3 py-2 text-[13px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none transition-colors duration-100 font-mono"
                   />
                   <button
                     onClick={setupBot}
                     disabled={saving || !tokenInput.trim()}
-                    className="px-4 py-2 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[13px] rounded-[6px] transition-colors duration-100 disabled:opacity-40 shrink-0"
+                    className="px-4 py-2 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] text-[13px] rounded-[6px] transition-colors duration-100 disabled:opacity-40 shrink-0"
                   >
                     {saving ? 'Vérification…' : 'Connecter'}
                   </button>
@@ -290,7 +290,7 @@ export default function SettingsPage() {
                 <button
                   onClick={generateCode}
                   disabled={generatingCode}
-                  className="px-3 py-1.5 bg-[#2E7CD1] hover:bg-[#2568B8] text-white text-[12px] rounded-[6px] transition-colors duration-100 disabled:opacity-40"
+                  className="px-3 py-1.5 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] text-[12px] rounded-[6px] transition-colors duration-100 disabled:opacity-40"
                 >
                   {generatingCode ? 'Génération…' : '+ Générer un code'}
                 </button>
@@ -380,7 +380,7 @@ function Step({ n, title, children, dim = false }: {
 }) {
   return (
     <div className={`flex gap-4 ${dim ? 'opacity-40' : ''}`}>
-      <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 bg-[#2E7CD1] text-white">
+      <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold mt-0.5 bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] text-[#571c27]">
         {n}
       </div>
       <div className="flex-1 min-w-0">

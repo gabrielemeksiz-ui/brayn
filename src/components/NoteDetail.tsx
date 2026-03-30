@@ -299,7 +299,7 @@ export function NoteDetail({
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[13px] text-[#2E7CD1] hover:underline break-all"
+                  className="text-[13px] text-[#ffcbd0] hover:underline break-all"
                 >
                   {url}
                 </a>

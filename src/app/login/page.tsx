@@ -50,7 +50,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
             autoFocus
-            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
+            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/50 transition-colors duration-100"
           />
 
           <input
@@ -58,7 +58,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Mot de passe"
-            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
+            className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-4 py-2.5 text-[14px] text-[#D4D4D4] placeholder-[#606060] focus:outline-none focus:border-[#ffcbd0]/50 transition-colors duration-100"
           />
 
           {error && <p className="text-red-400 text-[13px] text-center">{error}</p>}
@@ -66,7 +66,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || !email || !password}
-            className="w-full bg-[#2E7CD1] hover:bg-[#2568B8] text-white font-medium rounded-[4px] py-2.5 text-[14px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-br from-[#ffcbd0] to-[#fda4af] hover:opacity-90 text-[#571c27] font-medium rounded-[4px] py-2.5 text-[14px] transition-colors duration-100 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>
@@ -74,7 +74,7 @@ export default function LoginPage() {
 
         <p className="text-center text-[13px] text-[#606060] mt-4">
           Pas de compte ?{" "}
-          <a href="/signup" className="text-[#2E7CD1] hover:underline">
+          <a href="/signup" className="text-[#ffcbd0] hover:underline">
             S'inscrire
           </a>
         </p>
