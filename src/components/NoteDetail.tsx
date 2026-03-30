@@ -255,6 +255,7 @@ export function NoteDetail({
                   <button
                     onClick={() => updateNoteCategories(note.categories.filter(c => c !== cat) as NoteCategory[])}
                     className="text-[#d8c1c3]/50 hover:text-[#e4e2e4] ml-1 leading-none"
+                    aria-label={`Retirer ${getCatLabel(cat)}`}
                   >
                     ×
                   </button>
