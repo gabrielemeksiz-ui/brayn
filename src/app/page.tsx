@@ -602,26 +602,24 @@ export default function BraynPage() {
       </aside>
 
       {/* Zone principale */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-[#191919]">
+      <main className="flex-1 flex flex-col overflow-hidden bg-[#131315]">
         {/* Barre de recherche */}
-        <div className="px-6 pt-4 pb-3 border-b border-[#2A2A2A] space-y-2.5 shrink-0">
+        <div className="px-6 pt-4 pb-3 space-y-2.5 shrink-0">
           <div className="flex gap-2 items-center">
             <div className="flex-1 relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#606060] pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#e4e2e4]/30 pointer-events-none text-[18px]">search</span>
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Rechercher dans mon cerveau…"
-                className="w-full bg-[#252525] border border-[#2A2A2A] rounded-[4px] pl-8 pr-4 py-[7px] text-[14px] placeholder-[#606060] text-[#D4D4D4] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100"
+                className="w-full bg-[#0e0e10] border-none rounded-lg pl-10 pr-4 py-2 text-sm placeholder-[#e4e2e4]/30 text-[#e4e2e4] focus:outline-none focus:ring-1 focus:ring-[#ffcbd0]/40 transition-all"
               />
             </div>
             <select
               value={filterPeriod}
               onChange={e => setFilterPeriod(e.target.value as 'today' | '7d' | '30d' | 'all')}
-              className="bg-[#252525] border border-[#2A2A2A] rounded-[4px] px-3 py-[7px] text-[13px] text-[#9B9B9B] focus:outline-none focus:border-[#2E7CD1] transition-colors duration-100 hover:border-[#333] cursor-pointer"
+              className="bg-[#0e0e10] border-none rounded-lg px-3 py-2 text-xs text-[#e4e2e4]/60 focus:outline-none focus:ring-1 focus:ring-[#ffcbd0]/40 cursor-pointer"
             >
               <option value="all">Tout</option>
               <option value="today">Aujourd&apos;hui</option>
@@ -631,17 +629,16 @@ export default function BraynPage() {
           </div>
           <div className="flex gap-1.5 flex-wrap">
             {categories.map(cat => {
-              const color = getCatColor(cat.id);
               const isActive = filterCat === cat.id;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setFilterCat(filterCat === cat.id ? null : cat.id)}
-                  className="px-2.5 py-[3px] rounded-[4px] text-[12px] border whitespace-nowrap transition-all duration-100"
-                  style={isActive
-                    ? { backgroundColor: `${color}33`, color, borderColor: `${color}80` }
-                    : { backgroundColor: 'transparent', color: `${color}99`, borderColor: `${color}50`, opacity: 0.7 }
-                  }
+                  className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-150
+                    ${isActive
+                      ? 'bg-[#ffcbd0]/15 text-[#ffcbd0] border border-[#ffcbd0]/30'
+                      : 'bg-[#353437] text-[#e4e2e4]/50 hover:text-[#e4e2e4] hover:bg-[#353437]/80'
+                    }`}
                 >
                   {getCatLabel(cat.id)}
                 </button>
@@ -682,35 +679,28 @@ export default function BraynPage() {
         )}
       </main>
 
-      {/* Modale confirmation suppression */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#252525] border border-[#2A2A2A] rounded-[8px] p-6 w-[340px] shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1f1f21] rounded-2xl p-6 w-[340px] shadow-[0px_20px_40px_rgba(0,0,0,0.4)] border border-[#534344]/15">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-[6px] bg-red-500/15 flex items-center justify-center shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                </svg>
+              <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
               </div>
               <div>
-                <p className="text-[14px] font-medium text-[#D4D4D4]">
-                  Supprimer cette note ?
-                </p>
-                <p className="text-[12px] text-[#606060] mt-0.5">Cette action est irréversible.</p>
+                <p className="text-sm font-semibold text-[#e4e2e4]">Supprimer cette note ?</p>
+                <p className="text-xs text-[#e4e2e4]/40 mt-0.5">Cette action est irréversible.</p>
               </div>
             </div>
-            <div className="flex gap-2 justify-end mt-5">
+            <div className="flex gap-2 mt-4">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-[13px] rounded-[4px] border border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333] transition-colors duration-100"
+                className="flex-1 bg-[#353437]/50 text-[#e4e2e4]/70 hover:text-[#e4e2e4] text-sm py-2 rounded-xl transition-colors"
               >
                 Annuler
               </button>
               <button
-                onClick={() => {
-                  deleteNotes([confirmDelete as string]);
-                }}
-                className="px-4 py-2 text-[13px] rounded-[4px] bg-red-500 hover:bg-red-600 text-white font-medium transition-colors duration-100"
+                onClick={() => deleteNotes([confirmDelete])}
+                className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm py-2 rounded-xl transition-colors font-semibold"
               >
                 Supprimer
               </button>
