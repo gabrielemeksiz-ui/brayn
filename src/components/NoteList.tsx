@@ -13,6 +13,15 @@ function noteTitle(note: Note): string {
   return note.original_text ?? '';
 }
 
+function noteSnippet(note: Note): string {
+  const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i;
+  const isTweet =
+    note.links?.some(l => tweetRegex.test(l)) ||
+    tweetRegex.test(note.original_text ?? '');
+  if (isTweet) return '';
+  return note.clean_original_language ?? '';
+}
+
 interface NoteListProps {
   notes: Note[];
   loading: boolean;
@@ -50,8 +59,8 @@ export function NoteList({
   if (loading) {
     return (
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[900px] mx-auto px-8 py-6">
-          <p className="text-[#606060] text-[14px]">Chargement…</p>
+        <div className="max-w-3xl mx-auto px-8 py-8">
+          <p className="text-sm text-[#e4e2e4]/30">Chargement…</p>
         </div>
       </div>
     );
@@ -59,30 +68,28 @@ export function NoteList({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[900px] mx-auto px-8 py-6">
+      <div className="max-w-3xl mx-auto px-8 py-6">
         {/* Toolbar */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[13px] text-[#9B9B9B]">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] uppercase tracking-widest text-[#e4e2e4]/30 font-bold">
             {notes.length} note{notes.length !== 1 ? 's' : ''}
           </span>
           <div className="flex items-center gap-2">
             {selectMode && selectedIds.size > 0 && (
               <button
                 onClick={handleDeleteSelected}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[13px] bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors duration-100"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                </svg>
+                <span className="material-symbols-outlined text-[14px]">delete</span>
                 Supprimer ({selectedIds.size})
               </button>
             )}
             <button
               onClick={() => { setSelectMode(v => !v); setSelectedIds(new Set()); }}
-              className={`px-3 py-1.5 rounded-[4px] text-[13px] border transition-colors duration-100
+              className={`px-3 py-1.5 rounded-lg text-xs transition-colors
                 ${selectMode
-                  ? 'bg-[#2E7CD1]/15 border-[#2E7CD1]/30 text-[#2E7CD1]'
-                  : 'bg-transparent border-[#2A2A2A] text-[#9B9B9B] hover:text-[#D4D4D4] hover:border-[#333]'
+                  ? 'bg-[#ffcbd0]/15 text-[#ffcbd0]'
+                  : 'text-[#e4e2e4]/40 hover:text-[#e4e2e4] hover:bg-[#353437]/50'
                 }`}
             >
               {selectMode ? 'Annuler' : 'Sélectionner'}
@@ -90,58 +97,61 @@ export function NoteList({
           </div>
         </div>
 
-        {/* List */}
+        {/* Liste */}
         {notes.length === 0 ? (
-          <p className="text-[#606060] text-[14px]">Aucune note</p>
+          <p className="text-sm text-[#e4e2e4]/30 pt-12 text-center">Aucune note</p>
         ) : (
           <div className="space-y-1">
             {notes.map(note => {
               const isChecked = selectedIds.has(note.id);
+              const snippet = noteSnippet(note);
               return (
                 <div
                   key={note.id}
                   onClick={() => selectMode ? toggleId(note.id) : onSelect(note)}
-                  className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-[6px] border transition-colors duration-100 cursor-pointer group
+                  className={`group flex items-start gap-3 w-full text-left p-5 rounded-xl transition-all duration-150 cursor-pointer
                     ${isChecked
-                      ? 'bg-red-500/10 border-red-500/30'
-                      : 'bg-[#252525] hover:bg-[#2A2A2A] border-[#2A2A2A] hover:border-[#333]'
+                      ? 'bg-red-500/10'
+                      : 'hover:bg-[#1b1b1d]'
                     }`}
                 >
                   {selectMode && (
-                    <div className={`w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors duration-100
-                      ${isChecked ? 'bg-red-500 border-red-500' : 'border-[#444]'}`}
+                    <div className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center shrink-0 transition-colors
+                      ${isChecked ? 'bg-red-500 border-red-500' : 'border-[#534344]'}`}
                     >
                       {isChecked && (
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="2 6 5 9 10 3"/>
-                        </svg>
+                        <span className="material-symbols-outlined text-white text-[12px]" style={{fontVariationSettings:"'FILL' 1"}}>check</span>
                       )}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] text-[#D4D4D4] truncate group-hover:text-white transition-colors duration-100">
-                      {noteTitle(note)}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-[12px] text-[#9B9B9B]">{formatDate(note.created_at)}</span>
+                  <div className="flex-1 min-w-0 pr-4">
+                    <div className="flex items-center gap-3 mb-1">
+                      <p className="text-[15px] font-semibold text-[#e4e2e4] truncate group-hover:text-[#ffcbd0] transition-colors duration-150">
+                        {noteTitle(note)}
+                      </p>
+                    </div>
+                    {snippet && (
+                      <p className="text-sm text-[#e4e2e4]/50 line-clamp-1 mb-3">{snippet}</p>
+                    )}
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <span className="text-[11px] font-medium text-[#e4e2e4]/30 uppercase tracking-wider flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">calendar_today</span>
+                        {formatDate(note.created_at)}
+                      </span>
                       {note.categories.slice(0, 2).map(cat => (
                         <span
                           key={cat}
-                          className="text-[11px] px-1.5 py-[1px] rounded-[4px] border"
-                          style={{
-                            backgroundColor: `${getCatColor(cat)}20`,
-                            color: getCatColor(cat),
-                            borderColor: `${getCatColor(cat)}50`,
-                          }}
+                          className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#353437] text-[#d8c1c3]"
                         >
                           {getCatLabel(cat)}
                         </span>
                       ))}
                       {!note.seen && (
-                        <span className="text-[11px] text-[#2E7CD1] font-medium">Nouveau</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffcbd0] ml-auto">Nouveau</span>
                       )}
                     </div>
                   </div>
+                  <span className="material-symbols-outlined text-[#e4e2e4]/10 group-hover:text-[#ffcbd0]/30 transition-colors shrink-0 mt-0.5">more_vert</span>
                 </div>
               );
             })}
