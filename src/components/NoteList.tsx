@@ -99,7 +99,7 @@ export function NoteList({
 
         {/* Liste */}
         {notes.length === 0 ? (
-          <p className="text-sm text-[#e4e2e4]/30 pt-12 text-center">Aucune note</p>
+          <p className="text-sm text-[#d8c1c3]/40 pt-12 text-center">Aucune note</p>
         ) : (
           <div className="space-y-1">
             {notes.map(note => {
@@ -109,7 +109,7 @@ export function NoteList({
                 <div
                   key={note.id}
                   onClick={() => selectMode ? toggleId(note.id) : onSelect(note)}
-                  className={`group flex items-start gap-3 w-full text-left p-5 rounded-xl transition-all duration-150 cursor-pointer
+                  className={`group flex items-start gap-3 w-full text-left p-6 rounded-xl transition-all duration-150 cursor-pointer
                     ${isChecked
                       ? 'bg-red-500/10'
                       : 'hover:bg-[#1b1b1d]'
@@ -126,12 +126,12 @@ export function NoteList({
                   )}
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-3 mb-1">
-                      <p className="text-[15px] font-semibold text-[#e4e2e4] truncate group-hover:text-[#ffcbd0] transition-colors duration-150">
+                      <p className="text-lg font-semibold text-[#e4e2e4] truncate group-hover:text-[#ffcbd0] transition-colors duration-150">
                         {noteTitle(note)}
                       </p>
                     </div>
                     {snippet && (
-                      <p className="text-sm text-[#e4e2e4]/50 line-clamp-1 mb-3">{snippet}</p>
+                      <p className="text-sm text-[#d8c1c3] line-clamp-1 mb-3">{snippet}</p>
                     )}
                     <div className="flex items-center gap-4 flex-wrap">
                       <span className="text-[11px] font-medium text-[#e4e2e4]/30 uppercase tracking-wider flex items-center gap-1">
@@ -141,13 +141,13 @@ export function NoteList({
                       {note.categories.slice(0, 2).map(cat => (
                         <span
                           key={cat}
-                          className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#353437] text-[#d8c1c3]"
+                          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#353437] text-[#d8c1c3]"
                         >
                           {getCatLabel(cat)}
                         </span>
                       ))}
                       {!note.seen && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffcbd0] ml-auto">Nouveau</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#ffcbd0] ml-auto">Nouveau</span>
                       )}
                     </div>
                   </div>
