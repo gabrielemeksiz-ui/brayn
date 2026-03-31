@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseUserClient } from '@/lib/supabase';
+import { getSupabaseUserClient, getSupabaseServiceClient } from '@/lib/supabase';
 import type { Category } from '@/lib/types';
 
 export async function POST(req: NextRequest) {
@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  const { error: profileError } = await supabase
+  const serviceClient = getSupabaseServiceClient();
+  const { error: profileError } = await serviceClient
     .from('user_profiles')
     .update({ onboarding_completed: true })
     .eq('user_id', user.id);
