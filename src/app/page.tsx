@@ -178,12 +178,25 @@ export default function BraynPage() {
     }
   };
 
+  const categoryTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
   const toggleCategoryExpand = (cat: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(cat)) {
       newExpanded.delete(cat);
+      const timer = categoryTimers.current.get(cat);
+      if (timer) { clearTimeout(timer); categoryTimers.current.delete(cat); }
     } else {
       newExpanded.add(cat);
+      const timer = setTimeout(() => {
+        setExpandedCategories(prev => {
+          const next = new Set(prev);
+          next.delete(cat);
+          return next;
+        });
+        categoryTimers.current.delete(cat);
+      }, 15000);
+      categoryTimers.current.set(cat, timer);
     }
     setExpandedCategories(newExpanded);
   };
