@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
     user_id: user.id,
   }));
 
-  const { error: insertError } = await supabase
+  // Use service client to bypass RLS for both writes
+  const serviceClient = getSupabaseServiceClient();
+
+  const { error: insertError } = await serviceClient
     .from('categories')
     .upsert(rows, { onConflict: 'id,user_id' });
 
@@ -45,7 +48,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
-  const serviceClient = getSupabaseServiceClient();
   const { error: profileError } = await serviceClient
     .from('user_profiles')
     .update({ onboarding_completed: true })
