@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { classifyNote, rewriteNote } from "@/lib/ai";
+import { getFewShotExamples, formatFewShotBlock } from "@/lib/feedback";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,8 +40,11 @@ export async function POST(req: NextRequest) {
 
       const customCategories = dbCategories ?? [];
 
+      const feedbackExamples = await getFewShotExamples(supabase, userId);
+      const fewShotBlock = formatFewShotBlock(feedbackExamples);
+
       const [classifyResult, rewriteResult] = await Promise.allSettled([
-        classifyNote(text, customCategories),
+        classifyNote(text, customCategories, fewShotBlock),
         rewriteNote(text),
       ]);
 
@@ -48,6 +52,7 @@ export async function POST(req: NextRequest) {
 
       if (classifyResult.status === 'fulfilled') {
         updates.categories = classifyResult.value.categories;
+        updates.ai_categories = classifyResult.value.categories;
       }
       if (rewriteResult.status === 'fulfilled') {
         updates.clean_original_language = rewriteResult.value.clean_original_language;
@@ -101,6 +106,9 @@ export async function POST(req: NextRequest) {
       .eq("hidden", false);
 
     const customCategories = dbCategories ?? [];
+
+    const feedbackExamplesA = await getFewShotExamples(supabase, userId);
+    const fewShotBlockA = formatFewShotBlock(feedbackExamplesA);
 
     const tweetUrlMatch = text.trim().match(/^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i);
     let tweetTitle: string | null = null;
@@ -156,7 +164,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [classifyResult, rewriteResult] = await Promise.allSettled([
-      classifyNote(tweetTitle ?? text, customCategories),
+      classifyNote(tweetTitle ?? text, customCategories, fewShotBlockA),
       tweetTitle
         ? Promise.resolve({ clean_original_language: tweetTitle })
         : rewriteNote(text),
@@ -168,8 +176,10 @@ export async function POST(req: NextRequest) {
       const cats = classifyResult.value.categories as string[];
       if (tweetUrlMatch && !cats.includes('twitter')) cats.unshift('twitter');
       updates.categories = cats;
+      updates.ai_categories = [...cats];
     } else if (tweetUrlMatch) {
       updates.categories = ['twitter'];
+      updates.ai_categories = ['twitter'];
     }
     if (rewriteResult.status === 'fulfilled') {
       updates.clean_original_language = rewriteResult.value.clean_original_language;

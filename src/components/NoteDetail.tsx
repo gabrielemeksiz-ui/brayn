@@ -62,6 +62,7 @@ export function NoteDetail({
   const [tweetText, setTweetText] = useState<string | null>(null);
 
   const [classifying, setClassifying] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState<'none' | 'validated' | 'corrected' | 'loading'>('none');
 
   // Reset local state when note changes
   useEffect(() => {
@@ -70,7 +71,28 @@ export function NoteDetail({
     setChatInput('');
     setShowChat(false);
     setEditingTitle(false);
+    setFeedbackStatus('none');
   }, [note.id]);
+
+  // Fetch classification feedback status
+  useEffect(() => {
+    if (!note.ai_categories || note.ai_categories.length === 0) {
+      setFeedbackStatus('none');
+      return;
+    }
+    fetch(`/api/notes/${note.id}/validate-classification`)
+      .then(r => {
+        if (r.status === 404) return null;
+        return r.json();
+      })
+      .then(data => {
+        if (!data) { setFeedbackStatus('none'); return; }
+        if (data.feedback_type === 'correction') setFeedbackStatus('corrected');
+        else if (data.feedback_type === 'explicit_validation') setFeedbackStatus('validated');
+        else setFeedbackStatus('none');
+      })
+      .catch(() => setFeedbackStatus('none'));
+  }, [note.id, note.ai_categories]);
 
   // Load chat history when note opens
   useEffect(() => {
@@ -101,6 +123,21 @@ export function NoteDetail({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ categories: newCategories }),
     });
+    if (note.ai_categories && note.ai_categories.length > 0) {
+      const sorted = (arr: string[]) => [...arr].sort();
+      const arraysEqual = JSON.stringify(sorted(note.ai_categories)) === JSON.stringify(sorted(newCategories));
+      setFeedbackStatus(arraysEqual ? 'validated' : 'corrected');
+    }
+  };
+
+  const handleValidateClassification = async () => {
+    setFeedbackStatus('loading');
+    try {
+      await fetch(`/api/notes/${note.id}/validate-classification`, { method: 'POST' });
+      setFeedbackStatus('validated');
+    } catch {
+      setFeedbackStatus('none');
+    }
   };
 
   const handleClassifyWithAI = async () => {
@@ -278,6 +315,30 @@ export function NoteDetail({
                     <option key={cat} value={cat}>{getCatLabel(cat)}</option>
                   ))}
               </select>
+              {/* Validate classification button */}
+              {note.ai_categories && note.ai_categories.length > 0 && (
+                feedbackStatus === 'corrected' ? (
+                  <span className="flex items-center gap-1 text-[10px] text-amber-400/60 uppercase tracking-wider ml-2">
+                    <span className="material-symbols-outlined" style={{fontSize: '14px'}}>edit</span>
+                    Classement corrigé
+                  </span>
+                ) : feedbackStatus === 'validated' ? (
+                  <span className="flex items-center gap-1 text-[10px] text-green-400/60 uppercase tracking-wider ml-2">
+                    <span className="material-symbols-outlined" style={{fontSize: '14px', fontVariationSettings: "'FILL' 1"}}>check_circle</span>
+                    Classement validé
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleValidateClassification}
+                    disabled={feedbackStatus === 'loading'}
+                    className="flex items-center gap-1 text-[10px] text-[#666] hover:text-green-400 uppercase tracking-wider ml-2 transition-colors duration-100 disabled:opacity-40"
+                    title="Valider le classement IA"
+                  >
+                    <span className="material-symbols-outlined" style={{fontSize: '14px'}}>check_circle</span>
+                    Bon classement
+                  </button>
+                )
+              )}
             </div>
           </div>
 

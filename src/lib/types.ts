@@ -22,6 +22,7 @@ export interface Note {
   source: NoteSource;
   seen: boolean;
   categories: NoteCategory[];
+  ai_categories: string[];
   tags: string[];
   links: string[];
   original_text: string;
@@ -49,6 +50,19 @@ export interface AIRewriteResponse {
 
 export interface AISummaryResponse {
   summary: string;
+}
+
+export type FeedbackType = 'correction' | 'implicit_validation' | 'explicit_validation';
+
+export interface ClassificationFeedback {
+  id: string;
+  note_id: string;
+  user_id: string;
+  original_text: string;
+  ai_categories: string[];
+  user_categories: string[];
+  feedback_type: FeedbackType;
+  created_at: string;
 }
 
 export interface IngestPayload {

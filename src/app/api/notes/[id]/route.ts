@@ -51,6 +51,40 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // --- Classification feedback capture ---
+    if (data) {
+      const aiCats = (data.ai_categories as string[]) ?? [];
+
+      // Signal A: Category correction
+      if ('categories' in updates && aiCats.length > 0) {
+        const userCats = (updates.categories as string[]) ?? [];
+        const sorted = (arr: string[]) => [...arr].sort();
+        const arraysEqual = JSON.stringify(sorted(aiCats)) === JSON.stringify(sorted(userCats));
+        const feedbackType = arraysEqual ? 'explicit_validation' : 'correction';
+
+        await supabase.rpc('upsert_classification_feedback', {
+          p_note_id: id,
+          p_user_id: user.id,
+          p_original_text: (data.original_text as string) ?? '',
+          p_ai_categories: aiCats,
+          p_user_categories: userCats,
+          p_feedback_type: feedbackType,
+        });
+      }
+
+      // Signal B: Implicit validation on seen
+      if ('seen' in updates && updates.seen === true && aiCats.length > 0) {
+        await supabase.rpc('upsert_classification_feedback', {
+          p_note_id: id,
+          p_user_id: user.id,
+          p_original_text: (data.original_text as string) ?? '',
+          p_ai_categories: aiCats,
+          p_user_categories: aiCats,
+          p_feedback_type: 'implicit_validation',
+        });
+      }
+    }
+
     return NextResponse.json(data, { status: 200 });
   } catch (err) {
     console.error("Error in PATCH /api/notes/[id]", err);

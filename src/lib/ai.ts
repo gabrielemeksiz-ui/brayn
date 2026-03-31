@@ -20,6 +20,7 @@ function parseJSON<T>(text: string): T {
 export async function classifyNote(
   originalText: string,
   allCategories: { id: string; label: string; ai_description: string }[],
+  fewShotBlock?: string,
 ): Promise<AIClassificationResponse> {
   const allCategoryIds = allCategories.map(c => c.id);
 
@@ -43,7 +44,7 @@ Règles :
 2. Ne te laisse pas piéger par les mots-clés de surface. Les sujets mentionnés en passant ne sont pas forcément la catégorie
 3. Demande-toi : "pourquoi l'auteur a écrit cette note ? qu'est-ce qu'il veut retenir ?"
 4. Assigne 1 catégorie si l'intention est claire. 2-3 seulement si la note exprime vraiment plusieurs intentions distinctes
-
+${fewShotBlock ?? ''}
 Note à classer :
 ${originalText}
 
