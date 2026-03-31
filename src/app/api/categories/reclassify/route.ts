@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getSupabaseUserClient, getSupabaseServiceClient } from '@/lib/supabase';
 import { classifyNote } from '@/lib/ai';
+import { getFewShotExamples, formatFewShotBlock } from '@/lib/feedback';
 
 export const maxDuration = 60;
 
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
   }
 
   const serviceSupabase = getSupabaseServiceClient();
+  const feedbackExamples = await getFewShotExamples(serviceSupabase, user.id);
+  const fewShotBlock = formatFewShotBlock(feedbackExamples);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -66,7 +69,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const result = await classifyNote(textForAI, allCategories);
+          const result = await classifyNote(textForAI, allCategories, fewShotBlock);
           let newCategories = result.categories as string[];
 
           const existingCats = note.categories ?? [];
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest) {
 
           await serviceSupabase
             .from('notes')
-            .update({ categories: newCategories })
+            .update({ categories: newCategories, ai_categories: newCategories })
             .eq('id', note.id);
 
           processed++;
