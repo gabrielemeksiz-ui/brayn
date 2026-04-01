@@ -10,6 +10,7 @@ import type { Note, NoteCategory } from '@/lib/types';
 import { NoteList } from '@/components/NoteList';
 import { NoteDetail } from '@/components/NoteDetail';
 import CategorySettings from '@/components/CategorySettings';
+import { GraphView } from '@/components/GraphView';
 
 function extractTweetUrls(links: string[], originalText: string): string[] {
   const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/gi;
@@ -24,7 +25,7 @@ function noteTitle(note: { links: string[] | null; original_text: string | null;
   return note.original_text ?? '';
 }
 
-type Section = 'new' | 'all' | 'recent' | string;
+type Section = 'new' | 'all' | 'recent' | 'graph' | string;
 
 export default function BraynPage() {
   const router = useRouter();
@@ -52,6 +53,12 @@ export default function BraynPage() {
   const [dragSourceCat, setDragSourceCat] = useState<string | null>(null);
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const deleteNotes = async (ids: string[]) => {
     await Promise.all(ids.map(id => fetch(`/api/notes/${id}`, { method: 'DELETE' })));
@@ -95,15 +102,28 @@ export default function BraynPage() {
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
+
+    // Use dedicated search endpoint for full-text queries
+    if (debouncedSearch.trim()) {
+      try {
+        const res = await fetch(`/api/notes/search?q=${encodeURIComponent(debouncedSearch)}&limit=50`);
+        const data = await res.json();
+        setNotes(data);
+      } catch {
+        setNotes([]);
+      }
+      setLoading(false);
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (section === 'new') params.set('seen', 'false');
     if (section === 'recent')
       params.set('from', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]);
-    if (section !== 'new' && section !== 'all' && section !== 'recent' && section !== 'settings') {
+    if (section !== 'new' && section !== 'all' && section !== 'recent' && section !== 'settings' && section !== 'graph') {
       params.set('category', section);
     }
-    if (search) params.set('q', search);
     if (filterCat) params.set('category', filterCat);
     if (filterPeriod === 'today') params.set('from', new Date().toISOString().split('T')[0]);
     if (filterPeriod === '7d')
@@ -115,7 +135,7 @@ export default function BraynPage() {
     const data = await res.json();
     setNotes(data);
     setLoading(false);
-  }, [section, search, filterCat, filterPeriod]);
+  }, [section, debouncedSearch, filterCat, filterPeriod]);
 
   useEffect(() => {
     fetchNotes();
@@ -410,6 +430,7 @@ export default function BraynPage() {
           </div>
 
           {sidebarNavItem('Tous', 'all', 'docs')}
+          {sidebarNavItem('Graphe', 'graph', 'hub')}
         </nav>
 
         {/* Catégories — style explorateur Obsidian */}
@@ -617,7 +638,12 @@ export default function BraynPage() {
               <input
                 type="text"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  if (e.target.value.trim() && (section === 'graph' || section === 'settings')) {
+                    setSection('all');
+                  }
+                }}
                 placeholder="Rechercher dans mon cerveau…"
                 className="w-full bg-[#0e0e10] border-none rounded-lg pl-10 pr-4 py-2 text-sm placeholder-[#e4e2e4]/30 text-[#e4e2e4] focus:outline-none focus:ring-1 focus:ring-[#ffcbd0]/40 transition-all"
               />
@@ -654,7 +680,19 @@ export default function BraynPage() {
         </div>
 
         {/* Contenu — settings, note ouverte ou liste */}
-        {section === 'settings' ? (
+        {section === 'graph' ? (
+          <GraphView
+            getCatColor={getCatColor}
+            getCatLabel={getCatLabel}
+            onSelectNote={(noteId) => {
+              const note = allNotes.find(n => n.id === noteId);
+              if (note) {
+                setSection('all');
+                openNote(note);
+              }
+            }}
+          />
+        ) : section === 'settings' ? (
           <CategorySettings
             onClose={() => setSection('all')}
             onCategoriesChanged={() => refetchCategories()}
@@ -672,6 +710,10 @@ export default function BraynPage() {
             getCatColor={getCatColor}
             getCatLabel={getCatLabel}
             getAllCategories={() => categories.map(c => c.id)}
+            onOpenRelated={(noteId) => {
+              const rn = allNotes.find(n => n.id === noteId);
+              if (rn) openNote(rn);
+            }}
           />
         ) : (
           <NoteList

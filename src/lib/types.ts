@@ -70,3 +70,37 @@ export interface IngestPayload {
   sentAt?: string;
   source?: NoteSource;
 }
+
+export interface SearchResult extends Note {
+  rank: number;
+  headline_original: string;
+  headline_clean: string;
+}
+
+export interface RelatedNote {
+  id: string;
+  original_text: string;
+  clean_original_language: string | null;
+  categories: string[];
+  created_at: string;
+  similarity: number;
+}
+
+export interface GraphNode {
+  id: string;
+  original_text: string;
+  clean_original_language: string | null;
+  categories: string[];
+  created_at: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  similarity: number;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}

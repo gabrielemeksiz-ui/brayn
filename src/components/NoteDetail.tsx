@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { Note, NoteCategory } from '@/lib/types';
+import type { Note, NoteCategory, RelatedNote } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { NoteEditor } from '@/components/NoteEditor';
 import { TweetEmbed } from '@/components/TweetEmbed';
@@ -38,6 +38,7 @@ interface NoteDetailProps {
   getCatColor: (cat: string) => string;
   getCatLabel: (cat: string) => string;
   getAllCategories: () => (NoteCategory | string)[];
+  onOpenRelated?: (noteId: string) => void;
 }
 
 export function NoteDetail({
@@ -48,6 +49,7 @@ export function NoteDetail({
   getCatColor,
   getCatLabel,
   getAllCategories,
+  onOpenRelated,
 }: NoteDetailProps) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
@@ -63,6 +65,7 @@ export function NoteDetail({
 
   const [classifying, setClassifying] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<'none' | 'validated' | 'corrected' | 'loading'>('none');
+  const [relatedNotes, setRelatedNotes] = useState<RelatedNote[]>([]);
 
   // Reset local state when note changes
   useEffect(() => {
@@ -72,6 +75,19 @@ export function NoteDetail({
     setShowChat(false);
     setEditingTitle(false);
     setFeedbackStatus('none');
+    setRelatedNotes([]);
+  }, [note.id]);
+
+  // Fetch related notes
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/notes/${note.id}/related?limit=5`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && Array.isArray(data)) setRelatedNotes(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [note.id]);
 
   // Fetch classification feedback status
@@ -370,6 +386,40 @@ export function NoteDetail({
 
           {/* Editor */}
           <NoteEditor noteId={note.id} initialFullText={editorInitialText} />
+
+          {/* Notes liées */}
+          {relatedNotes.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-[#2a2a2c]">
+              <p className="text-[10px] uppercase tracking-widest text-[#e4e2e4]/30 font-bold mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px]">hub</span>
+                Notes liées
+              </p>
+              <div className="space-y-1.5">
+                {relatedNotes.map(rn => (
+                  <button
+                    key={rn.id}
+                    onClick={() => onOpenRelated?.(rn.id)}
+                    className="w-full text-left px-3 py-2 rounded-lg bg-[#1b1b1d] hover:bg-[#353437]/50 transition-colors group"
+                  >
+                    <p className="text-sm text-[#e4e2e4]/80 group-hover:text-[#ffcbd0] truncate transition-colors">
+                      {rn.clean_original_language ?? rn.original_text}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] text-[#e4e2e4]/30 font-mono">
+                        {Math.round(rn.similarity * 100)}% similaire
+                      </span>
+                      {(rn.categories ?? []).slice(0, 2).map(cat => (
+                        <span key={cat} className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                          style={{ backgroundColor: getCatColor(cat) + '20', color: getCatColor(cat) }}>
+                          {getCatLabel(cat)}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

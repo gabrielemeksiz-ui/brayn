@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import type { Note } from '@/lib/types';
+import type { Note, SearchResult } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 
-function noteTitle(note: Note): string {
+function noteTitle(note: Note | SearchResult): string {
+  if ('headline_original' in note && note.headline_original) {
+    return note.headline_original;
+  }
   const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i;
   const isTweet =
     note.links?.some(l => tweetRegex.test(l)) ||
@@ -13,7 +16,10 @@ function noteTitle(note: Note): string {
   return note.original_text ?? '';
 }
 
-function noteSnippet(note: Note): string {
+function noteSnippet(note: Note | SearchResult): string {
+  if ('headline_clean' in note && note.headline_clean) {
+    return note.headline_clean;
+  }
   const tweetRegex = /https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/i;
   const isTweet =
     note.links?.some(l => tweetRegex.test(l)) ||
@@ -126,12 +132,16 @@ export function NoteList({
                   )}
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-3 mb-1">
-                      <p className="text-lg font-semibold text-[#e4e2e4] truncate group-hover:text-[#ffcbd0] transition-colors duration-150">
-                        {noteTitle(note)}
-                      </p>
+                      <p
+                        className="text-lg font-semibold text-[#e4e2e4] truncate group-hover:text-[#ffcbd0] transition-colors duration-150 [&>mark]:bg-[#ffcbd0]/30 [&>mark]:text-[#ffcbd0] [&>mark]:rounded-sm [&>mark]:px-0.5"
+                        dangerouslySetInnerHTML={{ __html: noteTitle(note) }}
+                      />
                     </div>
                     {snippet && (
-                      <p className="text-sm text-[#d8c1c3] line-clamp-1 mb-3">{snippet}</p>
+                      <p
+                        className="text-sm text-[#d8c1c3] line-clamp-1 mb-3 [&>mark]:bg-[#ffcbd0]/30 [&>mark]:text-[#ffcbd0] [&>mark]:rounded-sm [&>mark]:px-0.5"
+                        dangerouslySetInnerHTML={{ __html: snippet }}
+                      />
                     )}
                     <div className="flex items-center gap-4 flex-wrap">
                       <span className="text-[11px] font-medium text-[#e4e2e4]/30 uppercase tracking-wider flex items-center gap-1">

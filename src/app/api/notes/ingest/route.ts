@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServiceClient } from "@/lib/supabase";
 import { classifyNote, rewriteNote } from "@/lib/ai";
 import { getFewShotExamples, formatFewShotBlock } from "@/lib/feedback";
+import { generateEmbedding, buildEmbeddingText } from "@/lib/embeddings";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,6 +60,21 @@ export async function POST(req: NextRequest) {
       }
       if (classifyResult.status === 'rejected' && rewriteResult.status === 'rejected') {
         updates.ai_status = 'failed';
+      }
+
+      // Generate embedding (non-blocking)
+      try {
+        const embeddingText = buildEmbeddingText({
+          original_text: text,
+          clean_original_language: updates.clean_original_language as string | null,
+          full_text: existingNote.full_text as string | null,
+        });
+        if (embeddingText.trim()) {
+          const embedding = await generateEmbedding(embeddingText);
+          updates.embedding = JSON.stringify(embedding);
+        }
+      } catch (embErr) {
+        console.error('Embedding generation failed (non-blocking):', embErr);
       }
 
       const { data: updated, error: updateError } = await supabase
@@ -189,6 +205,21 @@ export async function POST(req: NextRequest) {
     }
     if (classifyResult.status === 'rejected' && rewriteResult.status === 'rejected') {
       updates.ai_status = 'failed';
+    }
+
+    // Generate embedding (non-blocking)
+    try {
+      const embeddingText = buildEmbeddingText({
+        original_text: text,
+        clean_original_language: updates.clean_original_language as string | null,
+        full_text: tweetFullText ?? null,
+      });
+      if (embeddingText.trim()) {
+        const embedding = await generateEmbedding(embeddingText);
+        updates.embedding = JSON.stringify(embedding);
+      }
+    } catch (embErr) {
+      console.error('Embedding generation failed (non-blocking):', embErr);
     }
 
     if (Object.keys(updates).length === 1 && updates.ai_status === 'done') {
