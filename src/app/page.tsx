@@ -33,7 +33,7 @@ export default function BraynPage() {
   const { categories, getCatLabel, getCatColor, refetch: refetchCategories } = useCategories();
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState<Note | null>(null);
-  const [section, setSection] = useState<Section>('new');
+  const [section, setSection] = useState<Section>('all');
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<string | null>(null);
   const [filterPeriod, setFilterPeriod] = useState<'today' | '7d' | '30d' | 'all'>('all');
